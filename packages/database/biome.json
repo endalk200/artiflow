@@ -1,0 +1,8 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+	"root": false,
+	"extends": ["@app/biome-config/base"],
+	"files": {
+		"includes": ["**", "!src/generated/**"]
+	}
+}
