@@ -1,0 +1,10 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+	"root": false,
+	"extends": ["@app/biome-config/react-internal"],
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	}
+}
