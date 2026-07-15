@@ -1,0 +1,20 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/dusk.css';
+@import 'fumadocs-ui/css/preset.css';
+
+@theme inline {
+  --font-sans: 'Inter', 'SF Pro Text', 'Segoe UI', sans-serif;
+  --font-mono: 'SFMono-Regular', 'Cascadia Code', 'Roboto Mono', monospace;
+}
+
+:root {
+  --fd-layout-width: 1440px;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-fd-primary) 24%, transparent);
+}

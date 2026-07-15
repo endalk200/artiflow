@@ -1,0 +1,68 @@
+---
+title: Code presentation
+description: Syntax highlighting, line emphasis, titles, tab groups, and package install blocks.
+---
+
+Fumadocs MDX includes a Shiki-powered code pipeline by default. The author writes fences; the renderer adds color, copy controls, titles, and optional line treatments.
+
+## Highlighted code
+
+```tsx title="components/greeting.tsx" showLineNumbers
+type GreetingProps = {
+  name: string;
+};
+
+export function Greeting({ name }: GreetingProps) {
+  return <p>Hello, {name}!</p>;
+}
+```
+
+## Diff and focus annotations
+
+Annotations are removed from the displayed output and converted into visual treatments:
+
+```ts title="lib/message.ts"
+const framework = 'plain markdown'; // [!code --]
+const framework = 'Fumadocs MDX'; // [!code ++]
+
+export function message() {
+  return `Rendered with ${framework}`; // [!code focus]
+}
+```
+
+## Code tab groups
+
+Adjacent fences with `tab` metadata become a single tabbed block.
+
+```ts tab="npm" tab-group="package-manager"
+npm run dev
+```
+
+```ts tab="pnpm"
+pnpm dev
+```
+
+```ts tab="bun"
+bun dev
+```
+
+## Generated install commands
+
+The `package-install` language expands one command into package-manager variants:
+
+```package-install
+fumadocs-mdx fumadocs-core fumadocs-ui
+```
+
+## Raw data is readable too
+
+```json title="content/docs/meta.json"
+{
+  "title": "MDX Lab",
+  "pages": ["index", "markdown", "code", "components", "math"]
+}
+```
+
+<Callout title="No hand-built highlighter">
+  The application does not import Shiki or wrap individual code blocks. Fumadocs' default MDX preset handles the transformation.
+</Callout>

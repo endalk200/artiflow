@@ -1,0 +1,62 @@
+---
+title: Markdown language tour
+description: Familiar authoring syntax, polished by the Fumadocs MDX component set.
+---
+
+MDX keeps ordinary Markdown pleasantly ordinary. The interesting part is that each element can be replaced by a React component at render time.
+
+## Text and emphasis
+
+Use **strong text**, *emphasis*, ~~strikethrough~~, `inline code`, and [links](https://mdxjs.com/) in the same paragraph. Footnote-like context can often be expressed more clearly with a callout:
+
+<Callout type="warn" title="Markdown inside JSX">
+  Leave a blank line around block Markdown nested inside JSX components. It keeps the MDX parser—and future readers—happy.
+</Callout>
+
+## Lists and tasks
+
+- Plain Markdown remains portable.
+- MDX adds JSX expressions and components.
+  - Nesting works as expected.
+  - The generated HTML stays semantic.
+
+1. Write the content.
+2. Save the file.
+3. Let the content source rebuild.
+
+- [x] Frontmatter is parsed
+- [x] Headings become a table of contents
+- [x] Code is highlighted
+- [ ] Add your own experiment
+
+## A comparison table
+
+| Capability | Markdown | MDX |
+| --- | :---: | :---: |
+| Headings and lists | ✓ | ✓ |
+| Embedded React | — | ✓ |
+| JavaScript expressions | — | ✓ |
+| Portable plain text | ✓ | Mostly |
+
+## Quotes and separators
+
+> Good documentation is an interface: it should reveal the right amount of detail at the right moment.
+
+---
+
+The horizontal rule above and this blockquote are standard Markdown, styled by Fumadocs without custom markup.
+
+## Expressions
+
+MDX can evaluate safe build-time expressions directly in content:
+
+<div className="not-prose my-6 grid grid-cols-3 gap-3">
+  {['Author', 'Compile', 'Render'].map((label, index) => (
+    <div key={label} className="rounded-xl border border-fd-border bg-fd-card p-4 text-center shadow-sm">
+      <span className="text-xs text-fd-muted-foreground">0{index + 1}</span>
+      <p className="mt-1 text-sm font-medium">{label}</p>
+    </div>
+  ))}
+</div>
+
+That row is generated from an array expression written directly in this MDX file.

@@ -1,0 +1,64 @@
+---
+title: MDX, rendered beautifully
+description: A compact experiment with Fumadocs MDX, Next.js, and React components.
+---
+
+Welcome to the lab. Every page in this section begins as a local `.mdx` file, is compiled by **Fumadocs MDX**, and is rendered through a statically generated Next.js route.
+
+<Callout title="What to look for">
+  The sidebar, table of contents, previous/next navigation, search data, syntax highlighting, and theme switcher are all driven by Fumadocs.
+</Callout>
+
+## Pick an experiment
+
+<Cards>
+  <Card title="Markdown language tour" href="/docs/markdown">
+    Tables, lists, links, blockquotes, task lists, and inline formatting.
+  </Card>
+  <Card title="Code presentation" href="/docs/code">
+    Highlighted code, titles, line emphasis, tab groups, and install commands.
+  </Card>
+  <Card title="Components in MDX" href="/docs/components">
+    Built-in Fumadocs primitives and a custom interactive React component.
+  </Card>
+  <Card title="Math notation" href="/docs/math">
+    Inline and display math rendered with Remark Math and KaTeX.
+  </Card>
+</Cards>
+
+## How the pipeline fits together
+
+<Steps>
+  <Step>
+    ### Author content
+
+    Write Markdown, JSX, and frontmatter in `content/docs`.
+  </Step>
+  <Step>
+    ### Generate a typed source
+
+    `fumadocs-mdx` creates the `.source` collection used by the app.
+  </Step>
+  <Step>
+    ### Render with React
+
+    The catch-all docs route supplies Fumadocs and custom components to the compiled MDX body.
+  </Step>
+</Steps>
+
+## The smallest useful file
+
+```mdx title="content/docs/hello.mdx"
+---
+title: Hello, MDX
+description: A tiny page with a rich component.
+---
+
+# Markdown still works
+
+<Callout>But this is a React component.</Callout>
+```
+
+<Callout type="info" title="Try it live">
+  Edit any file under `content/docs` while `npm run dev` is running. Fumadocs watches the collection and refreshes the generated source.
+</Callout>
