@@ -1,0 +1,41 @@
+{
+	"name": "app",
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.15",
+		"turbo": "^2.9.14",
+		"typescript": "^6.0.3"
+	},
+	"engines": {
+		"node": ">=18"
+	},
+	"packageManager": "bun@1.3.14",
+	"private": true,
+	"scripts": {
+		"build": "turbo run build",
+		"build-storybook": "turbo run build-storybook",
+		"dev": "turbo run dev",
+		"lint": "turbo run lint",
+		"lint:fix": "turbo run lint:fix",
+		"format:check": "biome format .",
+		"format:write": "biome format . --write",
+		"check-types": "turbo run check-types",
+		"test": "turbo run test",
+		"test:storybook": "turbo run test:storybook",
+		"test:integration": "turbo run test:integration",
+		"db:generate": "turbo run db:generate",
+		"db:migrate:dev": "bun --filter @app/database db:migrate:dev",
+		"db:migrate:deploy": "bun --filter @app/database db:migrate:deploy",
+		"db:migrate:reset": "bun --filter @app/database db:migrate:reset",
+		"db:studio": "bun --filter @app/database db:studio",
+		"storybook": "turbo run storybook",
+		"test:e2e": "turbo run test:e2e",
+		"test:e2e:headed": "turbo run test:e2e:headed",
+		"test:e2e:ui": "turbo run test:e2e:ui"
+	},
+	"workspaces": [
+		"apps/*",
+		"packages/*",
+		"packages/domains/*",
+		"packages/shared/*"
+	]
+}

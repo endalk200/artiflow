@@ -1,0 +1,59 @@
+{
+	"$schema": "https://turborepo.dev/schema.json",
+	"ui": "stream",
+	"tasks": {
+		"build": {
+			"dependsOn": ["^build", "db:generate"],
+			"inputs": ["$TURBO_DEFAULT$", ".env*"],
+			"outputs": [".next/**", "!.next/cache/**"]
+		},
+		"lint": {
+			"dependsOn": ["^lint"]
+		},
+		"lint:fix": {
+			"dependsOn": ["^lint:fix"],
+			"cache": false
+		},
+		"check-types": {
+			"dependsOn": ["^check-types", "db:generate"]
+		},
+		"test": {
+			"dependsOn": ["^test"]
+		},
+		"test:storybook": {
+			"cache": false
+		},
+		"storybook": {
+			"cache": false,
+			"persistent": true
+		},
+		"build-storybook": {
+			"dependsOn": ["^build"],
+			"outputs": ["storybook-static/**"]
+		},
+		"test:integration": {
+			"dependsOn": ["^test:integration", "db:generate"],
+			"cache": false
+		},
+		"db:generate": {
+			"outputs": ["src/generated/**"]
+		},
+		"test:e2e": {
+			"dependsOn": ["build", "^build"],
+			"cache": false
+		},
+		"test:e2e:headed": {
+			"dependsOn": ["build", "^build"],
+			"cache": false
+		},
+		"test:e2e:ui": {
+			"dependsOn": ["build", "^build"],
+			"cache": false
+		},
+		"dev": {
+			"dependsOn": ["db:generate"],
+			"cache": false,
+			"persistent": true
+		}
+	}
+}
