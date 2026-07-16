@@ -1,9 +1,0 @@
-{
-	"extends": "@app/typescript-config/base.json",
-	"compilerOptions": {
-		"allowImportingTsExtensions": true,
-		"rootDir": "."
-	},
-	"include": ["**/*.ts"],
-	"exclude": ["node_modules", "src/generated"]
-}
