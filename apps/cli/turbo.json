@@ -1,0 +1,9 @@
+{
+	"extends": ["//"],
+	"tasks": {
+		"build": {
+			"inputs": ["$TURBO_EXTENDS$", "$TURBO_ROOT$/scripts/build-cli.ts", "$TURBO_ROOT$/scripts/sync-cli-version.ts"],
+			"outputs": ["dist/**"]
+		}
+	}
+}

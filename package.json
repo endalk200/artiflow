@@ -2,8 +2,11 @@
 	"name": "app",
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.15",
+		"@changesets/cli": "^2.31.1",
+		"js-yaml": "4.3.0",
 		"turbo": "^2.9.14",
-		"typescript": "^6.0.3"
+		"typescript": "^6.0.3",
+		"undici": "7.28.0"
 	},
 	"engines": {
 		"node": ">=18"
@@ -11,11 +14,16 @@
 	"packageManager": "bun@1.3.14",
 	"private": true,
 	"scripts": {
+		"artiflow": "bun run apps/cli/src/bin.ts --",
 		"build": "turbo run build",
 		"build-storybook": "turbo run build-storybook",
+		"changeset": "changeset",
 		"dev": "turbo run dev",
 		"lint": "turbo run lint",
 		"lint:fix": "turbo run lint:fix",
+		"release:audit": "bun run scripts/audit-release.ts",
+		"release:smoke": "bun run scripts/smoke-npm-package.ts",
+		"release:verify": "bun run scripts/verify-npm-package.ts",
 		"format:check": "biome format .",
 		"format:write": "biome format . --write",
 		"check-types": "turbo run check-types",
@@ -30,12 +38,20 @@
 		"storybook": "turbo run storybook",
 		"test:e2e": "turbo run test:e2e",
 		"test:e2e:headed": "turbo run test:e2e:headed",
-		"test:e2e:ui": "turbo run test:e2e:ui"
+		"test:e2e:ui": "turbo run test:e2e:ui",
+		"sync-cli-version": "bun run scripts/sync-cli-version.ts",
+		"version-packages": "changeset version && bun run sync-cli-version"
 	},
 	"workspaces": [
 		"apps/*",
 		"packages/*",
 		"packages/domains/*",
 		"packages/shared/*"
-	]
+	],
+	"overrides": {
+		"@hono/node-server": "1.19.14",
+		"hono": "4.12.30",
+		"postcss": "8.5.19",
+		"protobufjs": "7.6.5"
+	}
 }

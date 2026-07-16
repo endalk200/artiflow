@@ -1,0 +1,69 @@
+name: Release PR
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-pr:
+    name: Create Release PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          # Prefer a maintainer-owned token because many repositories block
+          # github-actions[bot] from creating PRs even with pull-requests: write.
+          token: ${{ secrets.RELEASE_PR_TOKEN || github.token }}
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Version packages
+        run: bun run version-packages
+
+      - name: Create or update release pull request
+        env:
+          # If RELEASE_PR_TOKEN is not configured, enable this repository setting:
+          # Settings > Actions > General > Workflow permissions >
+          # Allow GitHub Actions to create and approve pull requests.
+          GH_TOKEN: ${{ secrets.RELEASE_PR_TOKEN || github.token }}
+        run: |
+          if [ -z "$(git status --porcelain --untracked-files=all)" ]; then
+            echo "No changesets found; release PR is up to date."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c changeset-release/main
+          git add .
+          git commit -m "chore: version packages"
+          git push --force-with-lease origin HEAD:changeset-release/main
+
+          warn_blocked() {
+            pr_url="https://github.com/${GITHUB_REPOSITORY}/pull/new/changeset-release/main"
+            echo "::warning title=Release PR update blocked::The release branch was pushed, but GitHub blocked this token from creating or updating pull requests. Configure RELEASE_PR_TOKEN or enable the repository setting that allows GitHub Actions to create pull requests, then open ${pr_url}."
+          }
+
+          if gh pr view changeset-release/main --json number >/dev/null 2>&1; then
+            gh pr edit changeset-release/main --title "Version Packages" --body "Automated Changesets version PR." || warn_blocked
+          elif ! gh pr create --base main --head changeset-release/main --title "Version Packages" --body "Automated Changesets version PR."; then
+            warn_blocked
+          fi

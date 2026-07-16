@@ -1,0 +1,57 @@
+{
+	"name": "artiflow",
+	"version": "0.0.1",
+	"description": "Command-line interface for Artiflow",
+	"private": false,
+	"type": "module",
+	"bin": {
+		"artiflow": "./dist/bin.js"
+	},
+	"files": [
+		"dist/bin.js",
+		"LICENSE",
+		"README.md"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/endalk200/artiflow.git",
+		"directory": "apps/cli"
+	},
+	"license": "MIT",
+	"engines": {
+		"node": ">=22.12.0"
+	},
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://registry.npmjs.org/"
+	},
+	"scripts": {
+		"build": "bun run ../../scripts/build-cli.ts",
+		"check-types": "tsc -p tsconfig.json --noEmit",
+		"format:check": "biome format .",
+		"format:write": "biome format . --write",
+		"lint": "biome lint .",
+		"lint:fix": "biome lint . --write",
+		"test": "vitest run src --passWithNoTests"
+	},
+	"devDependencies": {
+		"@app/typescript-config": "*",
+		"@effect/opentelemetry": "4.0.0-beta.98",
+		"@effect/platform-node": "4.0.0-beta.98",
+		"@effect/vitest": "4.0.0-beta.98",
+		"@opentelemetry/api": "^1.9.1",
+		"@opentelemetry/api-logs": "^0.219.0",
+		"@opentelemetry/exporter-logs-otlp-http": "^0.219.0",
+		"@opentelemetry/exporter-trace-otlp-http": "^0.219.0",
+		"@opentelemetry/resources": "^2.8.0",
+		"@opentelemetry/sdk-logs": "^0.219.0",
+		"@opentelemetry/sdk-trace-base": "^2.8.0",
+		"@opentelemetry/sdk-trace-node": "^2.8.0",
+		"@opentelemetry/semantic-conventions": "^1.41.1",
+		"@types/node": "^22.15.3",
+		"effect": "4.0.0-beta.98",
+		"toml": "^4.1.1",
+		"typescript": "^6.0.3",
+		"vitest": "^4.1.8"
+	}
+}

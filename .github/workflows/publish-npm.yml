@@ -1,0 +1,154 @@
+name: Publish npm Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish artiflow
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: npm-production
+    env:
+      AUTH_EMAIL_FROM: Artiflow CI <ci@example.com>
+      BETTER_AUTH_SECRET: ci-secret-that-is-at-least-thirty-two-characters
+      BETTER_AUTH_URL: http://localhost:3000
+      DATABASE_URL: postgresql://artiflow:artiflow@localhost:5432/artiflow
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      RESEND_API_KEY: re_ci
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      published: ${{ steps.publish.outputs.published }}
+      release_needed: ${{ steps.publish.outputs.release_needed }}
+      version: ${{ steps.package.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Set up Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22.14.0
+          registry-url: https://registry.npmjs.org
+
+      - name: Set up npm
+        run: npm install -g npm@11.15.0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Audit release dependencies
+        run: bun run release:audit
+
+      - name: Check formatting
+        run: bun run format:check
+
+      - name: Check types
+        run: bun run check-types
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Test
+        run: bun run test
+
+      - name: Build
+        run: bun run build
+
+      - name: Verify npm package
+        run: bun run release:verify
+
+      - name: Smoke test packed npm package
+        run: bun run release:smoke
+
+      - name: Read package version
+        id: package
+        run: |
+          version="$(node -p 'require("./apps/cli/package.json").version')"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish package to npm
+        id: publish
+        working-directory: apps/cli
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PKG_VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          if npm view "artiflow@${PKG_VERSION}" version >/dev/null 2>&1; then
+            echo "Version ${PKG_VERSION} already exists on npm; skipping publish."
+            echo "published=false" >> "$GITHUB_OUTPUT"
+
+            if gh release view "artiflow-cli-v${PKG_VERSION}" >/dev/null 2>&1; then
+              echo "release_needed=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "release_needed=true" >> "$GITHUB_OUTPUT"
+            fi
+
+            exit 0
+          fi
+
+          npm publish --access public --tag latest --provenance
+          echo "published=true" >> "$GITHUB_OUTPUT"
+          echo "release_needed=true" >> "$GITHUB_OUTPUT"
+
+  github-release:
+    name: Publish GitHub Release
+    needs: publish
+    if: needs.publish.outputs.release_needed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+
+      - name: Create tag and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.publish.outputs.version }}
+        run: |
+          tag="artiflow-cli-v${VERSION}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git ls-remote --exit-code --tags origin "$tag" >/dev/null 2>&1; then
+            echo "Tag $tag already exists; skipping tag push."
+          else
+            git tag "$tag" "$GITHUB_SHA"
+            git push origin "$tag"
+          fi
+
+          cat > release-notes.md <<EOF
+          artiflow ${VERSION}
+
+          Install this release with:
+
+              npm install --global artiflow@${VERSION}
+          EOF
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" --draft=false --title "Artiflow CLI v${VERSION}" --notes-file release-notes.md
+          else
+            gh release create "$tag" --title "Artiflow CLI v${VERSION}" --notes-file release-notes.md
+          fi
