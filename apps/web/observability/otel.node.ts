@@ -1,4 +1,5 @@
 import * as NodeSdk from "@effect/opentelemetry/NodeSdk";
+import * as OtelTracer from "@effect/opentelemetry/OtelTracer";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
@@ -13,6 +14,7 @@ import {
 	TELEMETRY_SDK_LANGUAGE_VALUE_NODEJS,
 } from "@opentelemetry/semantic-conventions";
 import { Layer } from "effect";
+import { RpcTraceNameProcessor } from "./rpc-trace-name-processor";
 
 const serviceName = process.env.OTEL_SERVICE_NAME ?? "nextjs-launchkey-web";
 const otlpEndpoint =
@@ -62,6 +64,7 @@ export function registerNextOtel() {
 			[ATTR_TELEMETRY_SDK_NAME]: "opentelemetry",
 		}),
 		spanProcessors: [
+			new RpcTraceNameProcessor(),
 			new BatchSpanProcessor(
 				new OTLPTraceExporter({ url: tracesUrl }),
 				exportBatchConfig,
@@ -73,7 +76,7 @@ export function registerNextOtel() {
 	globalScope[globalRegistration] = true;
 }
 
-export const OtelLive = NodeSdk.layer(() => ({
+const TelemetrySignalsLive = NodeSdk.layer(() => ({
 	logRecordProcessor: [
 		new BatchLogRecordProcessor(
 			new OTLPLogExporter({ url: logsUrl }),
@@ -85,10 +88,9 @@ export const OtelLive = NodeSdk.layer(() => ({
 		serviceName,
 	},
 	shutdownTimeout: 5_000,
-	spanProcessor: [
-		new BatchSpanProcessor(
-			new OTLPTraceExporter({ url: tracesUrl }),
-			exportBatchConfig,
-		),
-	],
-})).pipe(Layer.orDie);
+}));
+
+export const OtelLive = OtelTracer.layerGlobal.pipe(
+	Layer.provideMerge(TelemetrySignalsLive),
+	Layer.orDie,
+);
