@@ -24,13 +24,13 @@
 		"@prisma/adapter-pg": "7.8.0",
 		"@prisma/client": "7.8.0",
 		"dotenv": "^17.2.3",
-		"effect": "4.0.0-beta.69",
+		"effect": "4.0.0-beta.98",
 		"pg": "^8.16.3"
 	},
 	"devDependencies": {
 		"@app/biome-config": "*",
 		"@app/typescript-config": "*",
-		"@effect/vitest": "4.0.0-beta.69",
+		"@effect/vitest": "4.0.0-beta.98",
 		"@types/node": "^22.15.3",
 		"@types/pg": "^8.15.6",
 		"prisma": "7.8.0",

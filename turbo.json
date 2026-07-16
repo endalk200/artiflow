@@ -4,6 +4,14 @@
 	"tasks": {
 		"build": {
 			"dependsOn": ["^build", "db:generate"],
+			"env": [
+				"AUTH_EMAIL_FROM",
+				"BETTER_AUTH_SECRET",
+				"BETTER_AUTH_URL",
+				"DATABASE_URL",
+				"NEXT_PUBLIC_APP_URL",
+				"RESEND_API_KEY"
+			],
 			"inputs": ["$TURBO_DEFAULT$", ".env*"],
 			"outputs": [".next/**", "!.next/cache/**"]
 		},
@@ -15,10 +23,26 @@
 			"cache": false
 		},
 		"check-types": {
-			"dependsOn": ["^check-types", "db:generate"]
+			"dependsOn": ["^check-types", "db:generate"],
+			"env": [
+				"AUTH_EMAIL_FROM",
+				"BETTER_AUTH_SECRET",
+				"BETTER_AUTH_URL",
+				"DATABASE_URL",
+				"NEXT_PUBLIC_APP_URL",
+				"RESEND_API_KEY"
+			]
 		},
 		"test": {
-			"dependsOn": ["^test"]
+			"dependsOn": ["^test"],
+			"env": [
+				"AUTH_EMAIL_FROM",
+				"BETTER_AUTH_SECRET",
+				"BETTER_AUTH_URL",
+				"DATABASE_URL",
+				"NEXT_PUBLIC_APP_URL",
+				"RESEND_API_KEY"
+			]
 		},
 		"test:storybook": {
 			"cache": false
@@ -36,6 +60,7 @@
 			"cache": false
 		},
 		"db:generate": {
+			"env": ["DATABASE_URL"],
 			"outputs": ["src/generated/**"]
 		},
 		"test:e2e": {

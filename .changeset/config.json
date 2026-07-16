@@ -1,0 +1,21 @@
+{
+	"$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
+	"access": "public",
+	"baseBranch": "main",
+	"changelog": "@changesets/cli/changelog",
+	"commit": false,
+	"fixed": [],
+	"ignore": [
+		"@app/auth",
+		"@app/biome-config",
+		"@app/config",
+		"@app/database",
+		"@app/post",
+		"@app/typescript-config",
+		"@app/ui",
+		"@app/utils",
+		"web"
+	],
+	"linked": [],
+	"updateInternalDependencies": "patch"
+}

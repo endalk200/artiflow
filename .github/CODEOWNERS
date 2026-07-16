@@ -1,0 +1,10 @@
+* @endalk200
+
+/.github/CODEOWNERS @endalk200
+/.github/workflows/ @endalk200
+/.changeset/ @endalk200
+/apps/cli/package.json @endalk200
+/apps/cli/README.md @endalk200
+/package.json @endalk200
+/bun.lock @endalk200
+/scripts/ @endalk200
