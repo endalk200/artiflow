@@ -40,18 +40,18 @@
 		"@effect/platform-node": "4.0.0-beta.98",
 		"@effect/vitest": "4.0.0-beta.98",
 		"@opentelemetry/api": "^1.9.1",
-		"@opentelemetry/api-logs": "^0.219.0",
-		"@opentelemetry/exporter-logs-otlp-http": "^0.219.0",
-		"@opentelemetry/exporter-trace-otlp-http": "^0.219.0",
+		"@opentelemetry/api-logs": "^0.220.0",
+		"@opentelemetry/exporter-logs-otlp-http": "^0.220.0",
+		"@opentelemetry/exporter-trace-otlp-http": "^0.220.0",
 		"@opentelemetry/resources": "^2.8.0",
-		"@opentelemetry/sdk-logs": "^0.219.0",
+		"@opentelemetry/sdk-logs": "^0.220.0",
 		"@opentelemetry/sdk-trace-base": "^2.8.0",
 		"@opentelemetry/sdk-trace-node": "^2.8.0",
-		"@opentelemetry/semantic-conventions": "^1.41.1",
-		"@types/node": "^22.15.3",
+		"@opentelemetry/semantic-conventions": "^1.43.0",
+		"@types/node": "^26.1.1",
 		"effect": "4.0.0-beta.98",
-		"toml": "^4.1.1",
-		"typescript": "^6.0.3",
-		"vitest": "^4.1.8"
+		"toml": "^5.0.0",
+		"typescript": "^7.0.2",
+		"vitest": "^4.1.10"
 	}
 }

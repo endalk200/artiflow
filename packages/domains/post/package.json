@@ -24,25 +24,25 @@
 		"@app/auth": "*",
 		"@app/database": "*",
 		"@app/ui": "*",
-		"@tanstack/react-form": "^1.33.0",
-		"@tanstack/react-query": "^5.100.14",
+		"@tanstack/react-form": "^1.33.2",
+		"@tanstack/react-query": "^5.101.2",
 		"effect": "4.0.0-beta.98",
-		"react": "^19.2.6"
+		"react": "^19.2.7"
 	},
 	"devDependencies": {
 		"@app/biome-config": "*",
 		"@app/typescript-config": "*",
 		"@effect/vitest": "4.0.0-beta.98",
-		"@storybook/nextjs-vite": "^10.4.3",
+		"@storybook/nextjs-vite": "^10.5.0",
 		"@testing-library/jest-dom": "^6.9.1",
 		"@testing-library/react": "^16.3.2",
-		"@testcontainers/postgresql": "12.0.1",
-		"@types/node": "^22.15.3",
-		"@types/react": "19.2.2",
-		"@vitejs/plugin-react": "^6.0.2",
+		"@testcontainers/postgresql": "12.0.4",
+		"@types/node": "^26.1.1",
+		"@types/react": "19.2.17",
+		"@vitejs/plugin-react": "^6.0.3",
 		"jsdom": "^29.1.1",
-		"testcontainers": "12.0.1",
-		"typescript": "^6.0.3",
-		"vitest": "^4.1.8"
+		"testcontainers": "12.0.4",
+		"typescript": "^7.0.2",
+		"vitest": "^4.1.10"
 	}
 }
