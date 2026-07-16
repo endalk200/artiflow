@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:17.6
-    container_name: nextjs-launchkey-postgres
+    container_name: artiflow-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-launchkey}
