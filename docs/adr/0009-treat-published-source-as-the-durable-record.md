@@ -1,0 +1,3 @@
+# Treat Published Source as the Durable Record
+
+The Artiflow platform accepts a Revision only after its frontmatter validates and the source passes a full render smoke test with the production Visual Component registry, then stores the exact submitted source as the durable record; compiled output is replaceable derived data, and a local MDX file is publish input rather than an ongoing dependency or the authoritative copy. This lets hosted Artifacts survive local file deletion or renaming, supports later source retrieval and renderer rebuilds, and allows users to retain or commit local source without making repository storage a prerequisite for durability.

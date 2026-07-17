@@ -1,0 +1,3 @@
+# Link Local Codebases with a Committed Manifest
+
+Each local codebase links to an Artiflow Project through a committed `.artiflow/project.json` manifest containing a stable Project ID and schema version. The CLI resolves the nearest manifest by walking up from the current directory and never infers Project identity from Git metadata, a directory name, or an absolute path; this gives Git and non-Git projects the same behavior and preserves links across moves, clones, and worktrees, while copied or forked directories that represent new work must be explicitly relinked. The manifest never stores credentials; v1 has no authentication, and future user authentication remains outside the committed project manifest.

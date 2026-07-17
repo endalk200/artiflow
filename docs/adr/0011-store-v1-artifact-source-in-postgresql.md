@@ -1,0 +1,3 @@
+# Store V1 Artifact Source in PostgreSQL
+
+V1 stores each immutable Artifact Source directly with its Revision metadata in PostgreSQL instead of splitting source into object storage and metadata into the database. Because v1 publishes one self-contained text document with no local binary assets, keeping the write transactional avoids orphaned objects, simplifies retrieval and deletion, and removes a service from local development; object storage can be introduced later when binary assets or source sizes make that additional boundary worthwhile, while compiled render output remains disposable derived data.
