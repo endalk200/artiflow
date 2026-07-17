@@ -3,15 +3,8 @@
 	"ui": "stream",
 	"tasks": {
 		"build": {
-			"dependsOn": ["^build", "db:generate"],
-			"env": [
-				"AUTH_EMAIL_FROM",
-				"BETTER_AUTH_SECRET",
-				"BETTER_AUTH_URL",
-				"DATABASE_URL",
-				"NEXT_PUBLIC_APP_URL",
-				"RESEND_API_KEY"
-			],
+			"dependsOn": ["^build"],
+			"env": ["ARTIFLOW_PUBLIC_BASE_URL", "DATABASE_URL", "NEXT_PUBLIC_APP_URL"],
 			"inputs": ["$TURBO_DEFAULT$", ".env*"],
 			"outputs": [".next/**", "!.next/cache/**"]
 		},
@@ -23,26 +16,10 @@
 			"cache": false
 		},
 		"check-types": {
-			"dependsOn": ["^check-types", "db:generate"],
-			"env": [
-				"AUTH_EMAIL_FROM",
-				"BETTER_AUTH_SECRET",
-				"BETTER_AUTH_URL",
-				"DATABASE_URL",
-				"NEXT_PUBLIC_APP_URL",
-				"RESEND_API_KEY"
-			]
+			"dependsOn": ["^check-types"]
 		},
 		"test": {
-			"dependsOn": ["^test"],
-			"env": [
-				"AUTH_EMAIL_FROM",
-				"BETTER_AUTH_SECRET",
-				"BETTER_AUTH_URL",
-				"DATABASE_URL",
-				"NEXT_PUBLIC_APP_URL",
-				"RESEND_API_KEY"
-			]
+			"dependsOn": ["^test"]
 		},
 		"test:storybook": {
 			"cache": false
@@ -56,27 +33,27 @@
 			"outputs": ["storybook-static/**"]
 		},
 		"test:integration": {
-			"dependsOn": ["^test:integration", "db:generate"],
+			"dependsOn": ["^test:integration"],
+			"env": ["DATABASE_TEST_URL"],
 			"cache": false
 		},
 		"db:generate": {
 			"env": ["DATABASE_URL"],
-			"outputs": ["src/generated/**"]
+			"outputs": ["drizzle/**"]
 		},
 		"test:e2e": {
-			"dependsOn": ["build", "^build"],
+			"dependsOn": ["^build"],
 			"cache": false
 		},
 		"test:e2e:headed": {
-			"dependsOn": ["build", "^build"],
+			"dependsOn": ["^build"],
 			"cache": false
 		},
 		"test:e2e:ui": {
-			"dependsOn": ["build", "^build"],
+			"dependsOn": ["^build"],
 			"cache": false
 		},
 		"dev": {
-			"dependsOn": ["db:generate"],
 			"cache": false,
 			"persistent": true
 		}

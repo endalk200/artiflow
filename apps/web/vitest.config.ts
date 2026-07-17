@@ -22,7 +22,14 @@ export default defineConfig({
 				extends: true,
 				test: {
 					name: "unit",
-					exclude: ["e2e/**", "node_modules/**"],
+					exclude: ["e2e/**", "node_modules/**", "**/*.integration.test.ts"],
+				},
+			},
+			{
+				extends: true,
+				test: {
+					name: "integration",
+					include: ["**/*.integration.test.ts"],
 				},
 			},
 			{
