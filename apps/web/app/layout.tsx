@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 
 import "@app/ui/globals.css";
-import { Geist } from "next/font/google";
-import { cn } from "@app/ui/lib/utils";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+import { SiteHeader } from "../components/site/site-header";
 
 export const metadata: Metadata = {
-	title: "App",
-	description: "Description",
+	title: {
+		default: "Artiflow",
+		template: "%s · Artiflow",
+	},
+	description:
+		"Visual documents for agent-authored plans, reports, reviews, and explanations.",
 };
 
 export default function RootLayout({
@@ -17,8 +19,11 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" className={cn("font-sans", geist.variable)}>
-			<body>{children}</body>
+		<html lang="en" className="font-sans antialiased">
+			<body className="flex min-h-screen flex-col bg-background">
+				<SiteHeader />
+				<div className="flex-1">{children}</div>
+			</body>
 		</html>
 	);
 }
