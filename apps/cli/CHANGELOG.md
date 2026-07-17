@@ -1,5 +1,11 @@
 # artiflow
 
+## 0.1.0
+
+### Minor Changes
+
+- 44db7c9: Add Project linking, Artifact publication and revision management, Artifact browsing, and Artiflow Skill installation. Replace the former configuration commands with file- and environment-based server URL configuration.
+
 ## 0.0.1
 
 ### Patch Changes
