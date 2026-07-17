@@ -1,0 +1,28 @@
+{
+	"name": "@app/api-contract",
+	"version": "0.0.0",
+	"type": "module",
+	"private": true,
+	"exports": {
+		"./api": "./src/api.ts",
+		"./models": "./src/models.ts"
+	},
+	"scripts": {
+		"check-types": "tsc --noEmit",
+		"format:check": "biome format .",
+		"format:write": "biome format . --write",
+		"lint": "biome lint .",
+		"lint:fix": "biome lint . --write",
+		"test": "vitest run"
+	},
+	"dependencies": {
+		"effect": "4.0.0-beta.98"
+	},
+	"devDependencies": {
+		"@app/biome-config": "*",
+		"@app/typescript-config": "*",
+		"@effect/vitest": "4.0.0-beta.98",
+		"typescript": "^6.0.3",
+		"vitest": "^4.1.8"
+	}
+}

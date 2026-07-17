@@ -1,0 +1,420 @@
+{
+	"version": "8",
+	"dialect": "postgres",
+	"id": "837910ba-6f83-44ac-ae67-8246541496fc",
+	"prevIds": ["00000000-0000-0000-0000-000000000000"],
+	"ddl": [
+		{
+			"isRlsEnabled": false,
+			"name": "artifacts",
+			"entityType": "tables",
+			"schema": "public"
+		},
+		{
+			"isRlsEnabled": false,
+			"name": "projects",
+			"entityType": "tables",
+			"schema": "public"
+		},
+		{
+			"isRlsEnabled": false,
+			"name": "revisions",
+			"entityType": "tables",
+			"schema": "public"
+		},
+		{
+			"type": "timestamp with time zone",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "created_at",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "artifacts"
+		},
+		{
+			"type": "integer",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "current_revision_number",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "artifacts"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "artifacts"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "project_id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "artifacts"
+		},
+		{
+			"type": "timestamp with time zone",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "updated_at",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "artifacts"
+		},
+		{
+			"type": "timestamp with time zone",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "created_at",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "projects"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "creation_idempotency_key",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "projects"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "creation_request_hash",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "projects"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "projects"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "name",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "projects"
+		},
+		{
+			"type": "timestamp with time zone",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "updated_at",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "projects"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "artifact_id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "revisions"
+		},
+		{
+			"type": "timestamp with time zone",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "created_at",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "revisions"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": false,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "description",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "revisions"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "revisions"
+		},
+		{
+			"type": "integer",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "number",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "revisions"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "publication_idempotency_key",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "revisions"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "publication_request_hash",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "revisions"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "source",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "revisions"
+		},
+		{
+			"type": "integer",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "source_format_version",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "revisions"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "title",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "revisions"
+		},
+		{
+			"nameExplicit": true,
+			"columns": [
+				{
+					"value": "creation_idempotency_key",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				}
+			],
+			"isUnique": true,
+			"where": null,
+			"with": "",
+			"method": "btree",
+			"concurrently": false,
+			"name": "projects_creation_idempotency_key_unique",
+			"entityType": "indexes",
+			"schema": "public",
+			"table": "projects"
+		},
+		{
+			"nameExplicit": true,
+			"columns": [
+				{
+					"value": "artifact_id",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				},
+				{
+					"value": "number",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				}
+			],
+			"isUnique": true,
+			"where": null,
+			"with": "",
+			"method": "btree",
+			"concurrently": false,
+			"name": "revisions_artifact_number_unique",
+			"entityType": "indexes",
+			"schema": "public",
+			"table": "revisions"
+		},
+		{
+			"nameExplicit": true,
+			"columns": [
+				{
+					"value": "publication_idempotency_key",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				}
+			],
+			"isUnique": true,
+			"where": null,
+			"with": "",
+			"method": "btree",
+			"concurrently": false,
+			"name": "revisions_publication_idempotency_key_unique",
+			"entityType": "indexes",
+			"schema": "public",
+			"table": "revisions"
+		},
+		{
+			"nameExplicit": false,
+			"columns": ["project_id"],
+			"schemaTo": "public",
+			"tableTo": "projects",
+			"columnsTo": ["id"],
+			"onUpdate": "NO ACTION",
+			"onDelete": "CASCADE",
+			"name": "artifacts_project_id_projects_id_fkey",
+			"entityType": "fks",
+			"schema": "public",
+			"table": "artifacts"
+		},
+		{
+			"nameExplicit": false,
+			"columns": ["artifact_id"],
+			"schemaTo": "public",
+			"tableTo": "artifacts",
+			"columnsTo": ["id"],
+			"onUpdate": "NO ACTION",
+			"onDelete": "CASCADE",
+			"name": "revisions_artifact_id_artifacts_id_fkey",
+			"entityType": "fks",
+			"schema": "public",
+			"table": "revisions"
+		},
+		{
+			"columns": ["id"],
+			"nameExplicit": false,
+			"name": "artifacts_pkey",
+			"schema": "public",
+			"table": "artifacts",
+			"entityType": "pks"
+		},
+		{
+			"columns": ["id"],
+			"nameExplicit": false,
+			"name": "projects_pkey",
+			"schema": "public",
+			"table": "projects",
+			"entityType": "pks"
+		},
+		{
+			"columns": ["id"],
+			"nameExplicit": false,
+			"name": "revisions_pkey",
+			"schema": "public",
+			"table": "revisions",
+			"entityType": "pks"
+		}
+	],
+	"renames": []
+}
