@@ -5,17 +5,7 @@
 	"changelog": "@changesets/cli/changelog",
 	"commit": false,
 	"fixed": [],
-	"ignore": [
-		"@app/auth",
-		"@app/biome-config",
-		"@app/config",
-		"@app/database",
-		"@app/post",
-		"@app/typescript-config",
-		"@app/ui",
-		"@app/utils",
-		"web"
-	],
+	"ignore": ["@app/biome-config", "@app/typescript-config", "@app/ui", "web"],
 	"linked": [],
 	"updateInternalDependencies": "patch"
 }
