@@ -10,6 +10,8 @@
 		"ignoreUnknown": true,
 		"includes": [
 			"**",
+			"!.agents",
+			"!.codex",
 			"!node_modules",
 			"!.turbo",
 			"!**/.turbo",

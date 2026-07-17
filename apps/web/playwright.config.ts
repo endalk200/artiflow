@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+import { e2eBaseUrl } from "./e2e/config";
+
 export default defineConfig({
 	testDir: "./e2e",
 	fullyParallel: false,
@@ -9,30 +11,24 @@ export default defineConfig({
 	reporter: [["list"], ["html", { open: "never" }]],
 	outputDir: "test-results",
 	use: {
-		baseURL: "http://127.0.0.1:3000",
+		baseURL: e2eBaseUrl,
 		trace: "on-first-retry",
 		screenshot: "only-on-failure",
 		video: "retain-on-failure",
 	},
 	projects: [
 		{
-			name: "setup",
-			testMatch: /.*\.setup\.ts/,
-		},
-		{
 			name: "chromium",
 			testMatch: /.*\.e2e\.tsx?/,
 			use: {
 				...devices["Desktop Chrome"],
-				storageState: "test-results/.auth/user.json",
 			},
-			dependencies: ["setup"],
 		},
 	],
 	webServer: {
-		command: "bun run start --port 3000",
-		url: "http://127.0.0.1:3000",
-		reuseExistingServer: !process.env.CI,
+		command: "bun run e2e:server",
+		url: e2eBaseUrl,
+		reuseExistingServer: false,
 		timeout: 120_000,
 	},
 });

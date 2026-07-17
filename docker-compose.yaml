@@ -4,9 +4,9 @@ services:
     container_name: artiflow-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-launchkey}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-launchkey}
-      POSTGRES_DB: ${POSTGRES_DB:-launchkey}
+      POSTGRES_USER: ${POSTGRES_USER:-artiflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-artiflow}
+      POSTGRES_DB: ${POSTGRES_DB:-artiflow}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:

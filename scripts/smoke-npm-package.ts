@@ -1,4 +1,4 @@
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -27,30 +27,46 @@ const run = (command: string, args: ReadonlyArray<string>, cwd: string) => {
 	return result.stdout.trim();
 };
 
-const packOutput = run("npm", ["pack", "--json", "--pack-destination", smokeRoot, cliRoot], repoRoot);
-const [packedPackage] = JSON.parse(packOutput) as Array<{ readonly filename: string }>;
-const tarballPath = join(smokeRoot, packedPackage.filename);
+try {
+	const packOutput = run("npm", ["pack", "--json", "--pack-destination", smokeRoot, cliRoot], repoRoot);
+	const [packedPackage] = JSON.parse(packOutput) as Array<{
+		readonly filename: string;
+	}>;
+	const tarballPath = join(smokeRoot, packedPackage.filename);
 
-run("npm", ["init", "-y"], smokeRoot);
-run("npm", ["install", tarballPath], smokeRoot);
+	run("npm", ["init", "-y"], smokeRoot);
+	run("npm", ["install", tarballPath], smokeRoot);
 
-const binPath = join(smokeRoot, "node_modules", ".bin", "artiflow");
-const actualVersion = run(binPath, ["version"], smokeRoot);
+	const binPath = join(smokeRoot, "node_modules", ".bin", "artiflow");
+	const actualVersion = run(binPath, ["version"], smokeRoot);
 
-if (actualVersion !== packageJson.version) {
-	throw new Error(`Expected artiflow version to print ${packageJson.version}, got ${actualVersion}.`);
+	if (actualVersion !== packageJson.version) {
+		throw new Error(`Expected artiflow version to print ${packageJson.version}, got ${actualVersion}.`);
+	}
+
+	const flagVersion = run(binPath, ["--version"], smokeRoot);
+
+	if (!flagVersion.includes(packageJson.version)) {
+		throw new Error(`Expected artiflow --version to include ${packageJson.version}, got ${flagVersion}.`);
+	}
+
+	const rootHelp = run(binPath, ["--help"], smokeRoot);
+
+	for (const command of ["project", "publish", "artifact", "skill", "version"]) {
+		if (!rootHelp.includes(command)) {
+			throw new Error(`Expected artiflow --help to include the ${command} command.`);
+		}
+	}
+
+	const projectHelp = run(binPath, ["project", "--help"], smokeRoot);
+
+	for (const command of ["create", "link", "show", "rename", "unlink", "delete"]) {
+		if (!projectHelp.includes(command)) {
+			throw new Error(`Expected artiflow project --help to include the ${command} command.`);
+		}
+	}
+
+	console.log(`Smoke-tested artiflow@${packageJson.version} from ${packedPackage.filename}.`);
+} finally {
+	await rm(smokeRoot, { force: true, recursive: true });
 }
-
-const flagVersion = run(binPath, ["--version"], smokeRoot);
-
-if (!flagVersion.includes(packageJson.version)) {
-	throw new Error(`Expected artiflow --version to include ${packageJson.version}, got ${flagVersion}.`);
-}
-
-const configPath = run(binPath, ["config", "path"], smokeRoot);
-
-if (!configPath.endsWith("/.artiflow/config.toml")) {
-	throw new Error(`Expected config path smoke test to print the default config path, got ${configPath}.`);
-}
-
-console.log(`Smoke-tested artiflow@${packageJson.version} from ${packedPackage.filename}.`);

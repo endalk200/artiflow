@@ -11,30 +11,25 @@ const distDirectory = join(cliRoot, "dist");
 
 await rm(distDirectory, { force: true, recursive: true });
 
-const build = spawnSync(
-	"bun",
+const result = spawnSync(
+	join(repoRoot, "node_modules", ".bin", "esbuild"),
 	[
-		"build",
 		join(cliRoot, "src", "bin.ts"),
-		"--target=node",
+		"--bundle",
+		"--platform=node",
 		"--format=esm",
-		"--packages=bundle",
+		"--target=node22",
+		'--banner:js=import { createRequire } from "node:module"; const require = createRequire(import.meta.url);',
 		`--outfile=${join(distDirectory, "bin.js")}`,
 	],
-	{
-		cwd: repoRoot,
-		encoding: "utf8",
-		stdio: "inherit",
-	},
+	{ cwd: repoRoot, encoding: "utf8", stdio: "inherit" },
 );
 
-if (build.error !== undefined) {
-	console.error(`Could not start Bun build: ${build.error.message}`);
+if (result.error !== undefined) {
+	console.error(`Could not start esbuild: ${result.error.message}`);
 	process.exit(1);
 }
 
-if (build.status !== 0) {
-	process.exit(build.status ?? 1);
-}
+if (result.status !== 0) process.exit(result.status ?? 1);
 
 await chmod(join(distDirectory, "bin.js"), 0o755);
