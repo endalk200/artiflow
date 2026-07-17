@@ -1,12 +1,15 @@
 import { Command } from "effect/unstable/cli";
-import { configCommand } from "./commands/config/index.js";
+import { artifactCommand } from "./commands/artifact/index.js";
+import { projectCommand } from "./commands/project/index.js";
+import { publishCommand } from "./commands/publish.cmd.js";
+import { skillCommand } from "./commands/skill/index.js";
 import { versionCommand } from "./commands/version.cmd.js";
 
-export const commandCatalog = [versionCommand, configCommand] as const;
+export const commandCatalog = [projectCommand, publishCommand, artifactCommand, skillCommand, versionCommand] as const;
 
 export const makeRootCommand = (commands: typeof commandCatalog = commandCatalog) =>
 	Command.make("artiflow").pipe(
-		Command.withDescription("Manage Artiflow configuration and local developer workflows."),
+		Command.withDescription("Publish agent-authored visual documents to Artiflow."),
 		Command.withSubcommands(commands),
 	);
 
