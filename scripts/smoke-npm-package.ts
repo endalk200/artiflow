@@ -1,11 +1,12 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const repoRoot = join(import.meta.dirname, "..");
 const cliRoot = join(repoRoot, "apps", "cli");
 const packageJson = (await Bun.file(join(cliRoot, "package.json")).json()) as { readonly version: string };
+const requestedTarballPath = process.argv[2];
 const smokeRoot = await mkdtemp(join(tmpdir(), "artiflow-cli-smoke-"));
 const npmCache = join(smokeRoot, ".npm-cache");
 
@@ -28,11 +29,26 @@ const run = (command: string, args: ReadonlyArray<string>, cwd: string) => {
 };
 
 try {
-	const packOutput = run("npm", ["pack", "--json", "--pack-destination", smokeRoot, cliRoot], repoRoot);
-	const [packedPackage] = JSON.parse(packOutput) as Array<{
-		readonly filename: string;
-	}>;
-	const tarballPath = join(smokeRoot, packedPackage.filename);
+	let tarballPath = requestedTarballPath;
+	let packedFilename = requestedTarballPath === undefined ? undefined : basename(requestedTarballPath);
+
+	if (tarballPath === undefined) {
+		const packOutput = run("npm", ["pack", "--json", "--pack-destination", smokeRoot, cliRoot], repoRoot);
+		const [packedPackage] = JSON.parse(packOutput) as Array<{
+			readonly filename: string;
+		}>;
+
+		if (packedPackage === undefined) {
+			throw new Error("npm pack did not return a package.");
+		}
+
+		tarballPath = join(smokeRoot, packedPackage.filename);
+		packedFilename = packedPackage.filename;
+	}
+
+	if (tarballPath === undefined || packedFilename === undefined) {
+		throw new Error("Could not resolve an npm package tarball for smoke testing.");
+	}
 
 	run("npm", ["init", "-y"], smokeRoot);
 	run("npm", ["install", tarballPath], smokeRoot);
@@ -66,7 +82,7 @@ try {
 		}
 	}
 
-	console.log(`Smoke-tested artiflow@${packageJson.version} from ${packedPackage.filename}.`);
+	console.log(`Smoke-tested artiflow@${packageJson.version} from ${packedFilename}.`);
 } finally {
 	await rm(smokeRoot, { force: true, recursive: true });
 }
