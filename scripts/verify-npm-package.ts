@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -6,6 +7,8 @@ const repoRoot = join(import.meta.dirname, "..");
 const cliRoot = join(repoRoot, "apps", "cli");
 const npmCache = join(tmpdir(), "artiflow-npm-cache");
 const expectedFiles = ["dist/bin.js", "LICENSE", "package.json", "README.md"].sort();
+const requestedOutputDirectory = process.argv[2];
+const outputDirectory = requestedOutputDirectory ?? (await mkdtemp(join(tmpdir(), "artiflow-cli-verify-")));
 
 const packageJson = (await Bun.file(join(cliRoot, "package.json")).json()) as {
 	readonly dependencies?: Record<string, string>;
@@ -34,7 +37,9 @@ if (presentDependencyFields.length > 0) {
 	);
 }
 
-const pack = spawnSync("npm", ["pack", "--dry-run", "--json", cliRoot], {
+await mkdir(outputDirectory, { recursive: true });
+
+const pack = spawnSync("npm", ["pack", "--json", "--pack-destination", outputDirectory, cliRoot], {
 	cwd: repoRoot,
 	encoding: "utf8",
 	env: {
@@ -44,23 +49,36 @@ const pack = spawnSync("npm", ["pack", "--dry-run", "--json", cliRoot], {
 	stdio: ["ignore", "pipe", "pipe"],
 });
 
-if (pack.status !== 0) {
-	throw new Error(`npm pack --dry-run failed:\n${pack.stderr}`);
+try {
+	if (pack.status !== 0) {
+		throw new Error(`npm pack failed:\n${pack.stderr}`);
+	}
+
+	const [packedPackage] = JSON.parse(pack.stdout) as Array<{
+		readonly filename: string;
+		readonly files: ReadonlyArray<{ readonly path: string }>;
+		readonly version: string;
+	}>;
+
+	if (packedPackage === undefined) {
+		throw new Error("npm pack did not return a package.");
+	}
+
+	if (packedPackage.version !== packageJson.version) {
+		throw new Error(`Packed version ${packedPackage.version} does not match package version ${packageJson.version}.`);
+	}
+
+	const actualFiles = packedPackage.files.map((file) => file.path).sort();
+
+	if (JSON.stringify(actualFiles) !== JSON.stringify(expectedFiles)) {
+		throw new Error(`Unexpected npm package files:\n${actualFiles.join("\n")}`);
+	}
+
+	console.log(
+		`Verified artiflow@${packedPackage.version} package contents in ${join(outputDirectory, packedPackage.filename)}.`,
+	);
+} finally {
+	if (requestedOutputDirectory === undefined) {
+		await rm(outputDirectory, { force: true, recursive: true });
+	}
 }
-
-const [packedPackage] = JSON.parse(pack.stdout) as Array<{
-	readonly files: ReadonlyArray<{ readonly path: string }>;
-	readonly version: string;
-}>;
-
-if (packedPackage.version !== packageJson.version) {
-	throw new Error(`Packed version ${packedPackage.version} does not match package version ${packageJson.version}.`);
-}
-
-const actualFiles = packedPackage.files.map((file) => file.path).sort();
-
-if (JSON.stringify(actualFiles) !== JSON.stringify(expectedFiles)) {
-	throw new Error(`Unexpected npm package files:\n${actualFiles.join("\n")}`);
-}
-
-console.log(`Verified artiflow@${packedPackage.version} package contents.`);

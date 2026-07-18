@@ -1,0 +1,42 @@
+name: Set up Bun dependencies
+description: Resolve the repository Bun version, install Bun, restore dependency caches, and install dependencies.
+
+runs:
+  using: composite
+  steps:
+    - name: Read Bun version
+      id: bun
+      shell: bash
+      run: |
+        package_manager="$(jq --raw-output '.packageManager // empty' package.json)"
+        bun_version="${package_manager#bun@}"
+
+        if [[ -z "${bun_version}" || "${package_manager}" == "${bun_version}" ]]; then
+          echo 'Expected root package.json packageManager to be "bun@<version>".' >&2
+          exit 1
+        fi
+
+        echo "version=${bun_version}" >> "$GITHUB_OUTPUT"
+
+    - name: Set up Bun
+      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      with:
+        bun-version: ${{ steps.bun.outputs.version }}
+
+    - name: Restore Bun package cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.bun/install/cache
+        key: ${{ runner.os }}-bun-${{ steps.bun.outputs.version }}-${{ hashFiles('bun.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-bun-${{ steps.bun.outputs.version }}-
+
+    - name: Restore installed dependencies
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-node-modules-${{ steps.bun.outputs.version }}-${{ hashFiles('bun.lock') }}
+
+    - name: Install dependencies
+      shell: bash
+      run: bun install --frozen-lockfile
