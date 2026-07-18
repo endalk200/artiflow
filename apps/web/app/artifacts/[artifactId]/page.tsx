@@ -1,10 +1,20 @@
-import { ArtifactPage } from "../../../components/artifact/artifact-page";
+import {
+	ArtifactPage,
+	generateArtifactMetadata,
+} from "../../../components/artifact/artifact-page";
+
+type LatestArtifactPageProps = {
+	readonly params: Promise<{ readonly artifactId: string }>;
+};
+
+export async function generateMetadata({ params }: LatestArtifactPageProps) {
+	const { artifactId } = await params;
+	return generateArtifactMetadata(artifactId);
+}
 
 export default async function LatestArtifactPage({
 	params,
-}: {
-	readonly params: Promise<{ readonly artifactId: string }>;
-}) {
+}: LatestArtifactPageProps) {
 	const { artifactId } = await params;
 	return <ArtifactPage artifactId={artifactId} />;
 }

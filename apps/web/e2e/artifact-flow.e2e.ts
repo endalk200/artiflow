@@ -77,6 +77,7 @@ test("Project index opens the latest Artifact and a historical Revision", async 
 		await expect(
 			page.getByRole("heading", { name: "Visual plan v2" }),
 		).toBeVisible();
+		await expect(page).toHaveTitle("Visual plan v2 · Artiflow");
 		await expect(page.getByText("Revision 2").first()).toBeVisible();
 		await expect(page.locator("[data-mermaid] svg.flowchart")).toBeVisible();
 
@@ -88,6 +89,7 @@ test("Project index opens the latest Artifact and a historical Revision", async 
 		await expect(
 			page.getByRole("heading", { name: "Visual plan v1" }),
 		).toBeVisible();
+		await expect(page).toHaveTitle("Visual plan v1 · Artiflow");
 		await expect(page.getByText("First pass.")).toBeVisible();
 
 		await page.setViewportSize({ height: 844, width: 390 });

@@ -1,12 +1,48 @@
 import { compileMDX } from "@fumadocs/mdx-remote";
 import { Effect } from "effect";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import { ArtifactService } from "../../server/artiflow/artifact-service";
 import { ProjectService } from "../../server/artiflow/project-service";
 import { artiflowRuntime } from "../../server/runtime";
 import { ArtifactShell } from "./artifact-shell";
 import { visualComponents } from "./visual-components";
+
+const loadArtifactPage = cache(
+	async (artifactId: string, revisionNumber?: number) =>
+		artiflowRuntime.runPromise(
+			Effect.gen(function* () {
+				const artifacts = yield* ArtifactService;
+				const projects = yield* ProjectService;
+				const artifact = yield* artifacts.get(artifactId);
+				return {
+					artifact,
+					project: yield* projects.get(artifact.projectId),
+					revision: yield* artifacts.getRevision(artifactId, revisionNumber),
+				};
+			}).pipe(
+				Effect.map((value) => value as typeof value | null),
+				Effect.catchTags({
+					ArtifactNotFound: () => Effect.succeed(null),
+					ProjectNotFound: () => Effect.succeed(null),
+					RevisionNotFound: () => Effect.succeed(null),
+				}),
+			),
+		),
+);
+
+export async function generateArtifactMetadata(
+	artifactId: string,
+	revisionNumber?: number,
+): Promise<Metadata> {
+	const result = await loadArtifactPage(artifactId, revisionNumber);
+
+	if (result === null) notFound();
+
+	return { title: result.revision.title };
+}
 
 export async function ArtifactPage({
 	artifactId,
@@ -15,25 +51,7 @@ export async function ArtifactPage({
 	readonly artifactId: string;
 	readonly revisionNumber?: number;
 }) {
-	const result = await artiflowRuntime.runPromise(
-		Effect.gen(function* () {
-			const artifacts = yield* ArtifactService;
-			const projects = yield* ProjectService;
-			const artifact = yield* artifacts.get(artifactId);
-			return {
-				artifact,
-				project: yield* projects.get(artifact.projectId),
-				revision: yield* artifacts.getRevision(artifactId, revisionNumber),
-			};
-		}).pipe(
-			Effect.map((value) => value as typeof value | null),
-			Effect.catchTags({
-				ArtifactNotFound: () => Effect.succeed(null),
-				ProjectNotFound: () => Effect.succeed(null),
-				RevisionNotFound: () => Effect.succeed(null),
-			}),
-		),
-	);
+	const result = await loadArtifactPage(artifactId, revisionNumber);
 
 	if (result === null) notFound();
 
