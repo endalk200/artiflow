@@ -10,12 +10,6 @@ export class SourceFileError extends Data.TaggedError("SourceFileError")<{
 	readonly path: string;
 }> {}
 
-export class SkillInstallError extends Data.TaggedError("SkillInstallError")<{
-	readonly cause: unknown;
-	readonly message: string;
-	readonly path: string;
-}> {}
-
 export class ArtifactProjectMismatch extends Data.TaggedError("ArtifactProjectMismatch")<{
 	readonly artifactId: string;
 	readonly artifactProjectId: string;
