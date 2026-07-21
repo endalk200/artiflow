@@ -45,3 +45,21 @@ base_url = "https://artiflow.example.com"
 
 Set `ARTIFLOW_CONFIG_PATH` to read a different config file. An
 `ARTIFLOW_BASE_URL` value takes precedence over the config file.
+
+## Telemetry
+
+The CLI exports Effect traces and structured logs using OTLP/HTTP protobuf. By
+default it sends traces to `http://127.0.0.1:4318/v1/traces` and logs to
+`http://127.0.0.1:4318/v1/logs`.
+
+Set `OTEL_EXPORTER_OTLP_ENDPOINT` to change the collector base URL:
+
+```sh
+OTEL_EXPORTER_OTLP_ENDPOINT=https://otel.example.com artiflow version
+```
+
+`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` and
+`OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` are optional full-URL overrides. Set
+`OTEL_SDK_DISABLED=true` to disable telemetry. See
+[`docs/telemetry.md`](../../docs/telemetry.md) for the signal precedence,
+service identities, exported fields, and privacy policy.
