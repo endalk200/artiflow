@@ -258,7 +258,7 @@ jobs:
           PKG_VERSION: ${{ needs.prepare.outputs.version }}
         run: >-
           node npm-cli/package/bin/npm-cli.js stage publish
-          "release-artifact/artiflow-${PKG_VERSION}.tgz"
+          "./release-artifact/artiflow-${PKG_VERSION}.tgz"
           --access public --tag latest --provenance
 
   github-release:
