@@ -10,6 +10,6 @@ Use `tdd` where possible, at pre-agreed seams.
 
 Run typechecking regularly, single test files regularly, and the full test suite once at the end.
 
-Once done, use `code-review` to review the work.
+Once done, use `code-review` to review the work. Only go through the review process twice at most.
 
 Leave the completed work uncommitted.
