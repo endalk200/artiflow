@@ -4,34 +4,75 @@ import { Command } from "effect/unstable/cli";
 import { VERSION } from "../version.js";
 import { rootCommand } from "./root.js";
 
-const rootSpanNameFromArgs = (args: ReadonlyArray<string>): string => {
-	if (args.includes("--version") || args.includes("-v")) {
-		return "artiflow.cli.version";
-	}
+const commandMatches = (command: { readonly alias: string | undefined; readonly name: string }, token: string) =>
+	command.name === token || command.alias === token;
 
-	const commandArgs = args.filter((arg) => !arg.startsWith("-"));
-	const command = commandArgs.length === 0 ? "help" : commandArgs.join(".");
+const subcommandsOf = (command: typeof rootCommand) => command.subcommands.flatMap(({ commands }) => commands);
 
-	return `artiflow.cli.${command}`;
+export const commandNameFromArgs = (args: ReadonlyArray<string>): string => {
+	if (args.includes("--version") || args.includes("-v")) return "version";
+	if (args[0] === "--help" || args[0] === "-h") return "help";
+
+	const root = args[0];
+	if (root === undefined) return "help";
+	const command = subcommandsOf(rootCommand).find((candidate) => commandMatches(candidate, root));
+	if (command === undefined) return "unknown";
+
+	const subcommand = args[1];
+	if (subcommand === undefined) return command.name;
+	const nestedCommand = command.subcommands
+		.flatMap(({ commands }) => commands)
+		.find((candidate) => commandMatches(candidate, subcommand));
+	return nestedCommand === undefined ? command.name : `${command.name} ${nestedCommand.name}`;
 };
 
-const commandNameFromRootSpan = (spanName: string): string =>
-	spanName.replace("artiflow.cli.", "").replaceAll(".", " ");
+const errorType = (error: unknown) =>
+	typeof error === "object" &&
+	error !== null &&
+	"_tag" in error &&
+	typeof error._tag === "string" &&
+	/^[A-Za-z][A-Za-z0-9]{0,63}$/.test(error._tag)
+		? error._tag
+		: "UnknownError";
 
-const traceCliRun = <E, R>(args: ReadonlyArray<string>, effect: Effect.Effect<void, E, R>) =>
+export const traceCliRun = <E, R>(args: ReadonlyArray<string>, effect: Effect.Effect<void, E, R>) =>
 	Effect.suspend(() => {
-		const spanName = rootSpanNameFromArgs(args);
+		const commandName = commandNameFromArgs(args);
+		const annotations = {
+			"artiflow.cli.command.name": commandName,
+			"artiflow.cli.version": VERSION,
+		};
 
 		return Effect.gen(function* () {
-			yield* Effect.logInfo("Artiflow CLI command started", { args, version: VERSION });
-			yield* effect;
+			yield* Effect.logInfo("Artiflow CLI command started").pipe(
+				Effect.annotateLogs({
+					...annotations,
+					"artiflow.cli.command.outcome": "started",
+				}),
+			);
+			yield* effect.pipe(
+				Effect.tapError((error) => {
+					const failureAttributes = {
+						...annotations,
+						"artiflow.cli.command.outcome": "failed",
+						"error.type": errorType(error),
+					};
+					return Effect.gen(function* () {
+						yield* Effect.annotateCurrentSpan(failureAttributes);
+						yield* Effect.logWarning("Artiflow CLI command failed").pipe(Effect.annotateLogs(failureAttributes));
+					});
+				}),
+			);
+			yield* Effect.annotateCurrentSpan("artiflow.cli.command.outcome", "completed");
+			yield* Effect.logInfo("Artiflow CLI command completed").pipe(
+				Effect.annotateLogs({
+					...annotations,
+					"artiflow.cli.command.outcome": "completed",
+				}),
+			);
 		}).pipe(
-			Effect.withSpan(spanName, {
-				attributes: {
-					"cli.command": commandNameFromRootSpan(spanName),
-					"artiflow.cli.args": args.join(" "),
-					"artiflow.cli.version": VERSION,
-				},
+			Effect.withSpan("artiflow.cli", {
+				attributes: annotations,
 			}),
 		);
 	});

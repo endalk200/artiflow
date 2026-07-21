@@ -7,7 +7,7 @@ import { Effect, FileSystem, Layer, Path, Runtime, Stdio, Terminal } from "effec
 import { TestConsole } from "effect/testing";
 import { CliOutput } from "effect/unstable/cli";
 import { ChildProcessSpawner } from "effect/unstable/process";
-import { runCliWithArgs } from "./cli/run.js";
+import { commandNameFromArgs, runCliWithArgs } from "./cli/run.js";
 import { CLI_EXIT_CODES, handleCliFailure } from "./runtime/failures.js";
 import { withoutConsoleLogger } from "./runtime/telemetry.js";
 
@@ -97,6 +97,13 @@ const runArtiflowCommand = (
 ) => captureArtiflowCommand(args).pipe(withIsolatedArtiflowEnvironment, Effect.provide(cliTestLayer(files, client)));
 
 describe("artiflow CLI", () => {
+	it("reduces telemetry command names to the bounded command catalog", () => {
+		assert.strictEqual(commandNameFromArgs(["publish", "/private/source/report.mdx"]), "publish");
+		assert.strictEqual(commandNameFromArgs(["publish", "show"]), "publish");
+		assert.strictEqual(commandNameFromArgs(["project", "create", "Private project name"]), "project create");
+		assert.strictEqual(commandNameFromArgs(["unknown", "publish"]), "unknown");
+	});
+
 	it.effect("prints root help and succeeds when invoked without arguments", () =>
 		Effect.gen(function* () {
 			const { stdout } = yield* runArtiflowCommand([]);
