@@ -5,6 +5,7 @@
 	"private": true,
 	"dependencies": {
 		"@app/api-contract": "*",
+		"@app/telemetry-config": "*",
 		"@app/ui": "*",
 		"@effect/opentelemetry": "4.0.0-beta.98",
 		"@effect/sql-pg": "4.0.0-beta.98",

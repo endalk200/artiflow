@@ -6,7 +6,14 @@
 			"dependsOn": ["^build"],
 			"env": ["ARTIFLOW_PUBLIC_BASE_URL", "DATABASE_URL", "NEXT_PUBLIC_APP_URL"],
 			"inputs": ["$TURBO_DEFAULT$", ".env*"],
-			"outputs": [".next/**", "!.next/cache/**"]
+			"outputs": [".next/**", "!.next/cache/**"],
+			"passThroughEnv": [
+				"OTEL_EXPORTER_OTLP_ENDPOINT",
+				"OTEL_EXPORTER_OTLP_LOGS_ENDPOINT",
+				"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
+				"OTEL_SDK_DISABLED",
+				"OTEL_SERVICE_NAME"
+			]
 		},
 		"lint": {
 			"dependsOn": ["^lint"]
@@ -55,7 +62,14 @@
 		},
 		"dev": {
 			"cache": false,
-			"persistent": true
+			"persistent": true,
+			"passThroughEnv": [
+				"OTEL_EXPORTER_OTLP_ENDPOINT",
+				"OTEL_EXPORTER_OTLP_LOGS_ENDPOINT",
+				"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
+				"OTEL_SDK_DISABLED",
+				"OTEL_SERVICE_NAME"
+			]
 		}
 	}
 }
