@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 import { ProjectsPageView } from "../../components/project/projects-page-view";
 import { ProjectService } from "../../server/artiflow/project-service";
-import { artiflowRuntime } from "../../server/runtime";
+import { runArtiflow } from "../../server/runtime";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ProjectsPage() {
-	const projects = await artiflowRuntime.runPromise(
+	const projects = await runArtiflow(
 		Effect.gen(function* () {
 			const service = yield* ProjectService;
 			return yield* service.list();

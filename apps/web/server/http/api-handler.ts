@@ -3,13 +3,14 @@ import {
 	RequestSchemaErrorMiddleware,
 } from "@app/api-contract/api";
 import { InvalidRequest } from "@app/api-contract/models";
-import { Effect, Layer } from "effect";
+import { Context, Effect, Layer } from "effect";
 import { HttpRouter, HttpServer } from "effect/unstable/http";
 import { HttpApiBuilder, HttpApiMiddleware } from "effect/unstable/httpapi";
 
 import { ArtifactService } from "../artiflow/artifact-service";
 import type { ArtiflowRepository } from "../artiflow/repository";
 import { ProjectService } from "../artiflow/project-service";
+import { activeTraceContext, effectTelemetryLayer } from "../telemetry/effect";
 
 const ProjectsLive = HttpApiBuilder.group(ArtiflowApi, "projects", (handlers) =>
 	Effect.gen(function* () {
@@ -82,5 +83,24 @@ export const makeApiHandler = <E>(
 		Layer.provide(HttpServer.layerServices),
 	);
 
-	return HttpRouter.toWebHandler(Layer.mergeAll(ApiLive));
+	const webHandler = HttpRouter.toWebHandler(
+		Layer.mergeAll(ApiLive, effectTelemetryLayer),
+	);
+
+	return {
+		...webHandler,
+		handler: (request: Request, requestContext?: Context.Context<never>) => {
+			const parentContext = activeTraceContext();
+			const effectContext =
+				parentContext === undefined
+					? requestContext
+					: requestContext === undefined
+						? parentContext
+						: Context.merge(requestContext, parentContext);
+			return webHandler.handler(
+				request,
+				effectContext as Context.Context<never> | undefined,
+			);
+		},
+	};
 };

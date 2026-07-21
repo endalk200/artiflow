@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { ProjectService } from "../../server/artiflow/project-service";
-import { artiflowRuntime } from "../../server/runtime";
+import { runArtiflow } from "../../server/runtime";
 
 export type ProjectActionState = {
 	readonly error?: string;
@@ -20,7 +20,7 @@ export async function createProjectAction(
 		return { error: "Project name is required." };
 	}
 
-	const result = await artiflowRuntime.runPromise(
+	const result = await runArtiflow(
 		Effect.gen(function* () {
 			const projects = yield* ProjectService;
 			yield* projects.create({
@@ -49,7 +49,7 @@ export async function createProjectAction(
 }
 
 export async function deleteProjectAction(projectId: string): Promise<void> {
-	await artiflowRuntime.runPromise(
+	await runArtiflow(
 		Effect.gen(function* () {
 			const projects = yield* ProjectService;
 			yield* projects.delete(projectId);
@@ -82,7 +82,7 @@ export async function renameProjectAction(
 		return { error: "Project name is required." };
 	}
 
-	const result = await artiflowRuntime.runPromise(
+	const result = await runArtiflow(
 		Effect.gen(function* () {
 			const projects = yield* ProjectService;
 			yield* projects.rename(projectId, name);

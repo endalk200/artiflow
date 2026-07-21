@@ -6,13 +6,13 @@ import { cache } from "react";
 
 import { ArtifactService } from "../../server/artiflow/artifact-service";
 import { ProjectService } from "../../server/artiflow/project-service";
-import { artiflowRuntime } from "../../server/runtime";
+import { runArtiflow } from "../../server/runtime";
 import { ArtifactShell } from "./artifact-shell";
 import { visualComponents } from "./visual-components";
 
 const loadArtifactPage = cache(
 	async (artifactId: string, revisionNumber?: number) =>
-		artiflowRuntime.runPromise(
+		runArtiflow(
 			Effect.gen(function* () {
 				const artifacts = yield* ArtifactService;
 				const projects = yield* ProjectService;
