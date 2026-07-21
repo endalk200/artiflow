@@ -5,7 +5,7 @@
 			"source": "endalk200/skills",
 			"sourceType": "github",
 			"skillPath": "skills/babysit-pr/SKILL.md",
-			"computedHash": "da28984cd420dcb33f8823ccf74b1cd69e9723435322378768733bbe779d523a"
+			"computedHash": "70f3a5929e6d35a08d47fc4e31a8175e6dd77c231cbfa3526eec136b97d1c1a9"
 		},
 		"code-review": {
 			"source": "endalk200/skills",
@@ -35,13 +35,13 @@
 			"source": "endalk200/skills",
 			"sourceType": "github",
 			"skillPath": "skills/grill-me/SKILL.md",
-			"computedHash": "af7443340d53b34247379294927f11ab77e041d49652a856f2e835f4a806fd27"
+			"computedHash": "948102007fa83ef9aa2674dde0cbc7ff647497ec00d3357ade87e1e0b008f49b"
 		},
 		"grill-with-docs": {
 			"source": "endalk200/skills",
 			"sourceType": "github",
 			"skillPath": "skills/grill-with-docs/SKILL.md",
-			"computedHash": "d60defedd63b4f8cf75289beff452b463b233e72a7ce46fe1c9a07ed73f9074a"
+			"computedHash": "2de7792e2b8f70fe4b96e9b2a68c74ca9ae2b3ddbdf5f88130be111b9ad4c992"
 		},
 		"grilling": {
 			"source": "endalk200/skills",
@@ -53,19 +53,19 @@
 			"source": "endalk200/skills",
 			"sourceType": "github",
 			"skillPath": "skills/handoff/SKILL.md",
-			"computedHash": "87e353708ab36062eac54ddb593a97ca553c0cb4bfa1ed1fdaf68520700723f1"
+			"computedHash": "c26cc4ecc01922e7650d57b99f35af26fdc94b6821afbbbad40a33303d51361f"
 		},
 		"implement": {
 			"source": "endalk200/skills",
 			"sourceType": "github",
 			"skillPath": "skills/implement/SKILL.md",
-			"computedHash": "82e25cc543b5e4fb247405d3a040f4b95d545db0d069773f94063fe452f3d1af"
+			"computedHash": "c6f9335ed102bb5ae0113ff7ad311b517bef47c7c3740b85eb4c77f40f009cb8"
 		},
 		"improve-codebase-architecture": {
 			"source": "endalk200/skills",
 			"sourceType": "github",
 			"skillPath": "skills/improve-codebase-architecture/SKILL.md",
-			"computedHash": "04338984b8a06922cba3e7f8c855ffb762cdbb34faf5157847eb0eca81213fd3"
+			"computedHash": "078b2a8eebec38c44a15bdc3e1b52881014272f3903dfd5c120a8894b2c53cc2"
 		},
 		"investigate-library-upgrade": {
 			"source": "endalk200/skills",
@@ -89,7 +89,7 @@
 			"source": "endalk200/skills",
 			"sourceType": "github",
 			"skillPath": "skills/setup-skills/SKILL.md",
-			"computedHash": "a25ad6de21ae76d58c5a98608875e7eaa70cb8fdf9f5b5ebcb3ad9f75ca80209"
+			"computedHash": "aa05777d31253ba64a216d7324ba526466efdce58e7ca4e0ce23c5bb705249b0"
 		},
 		"shadcn": {
 			"source": "shadcn/ui",
@@ -131,13 +131,13 @@
 			"source": "endalk200/skills",
 			"sourceType": "github",
 			"skillPath": "skills/to-spec/SKILL.md",
-			"computedHash": "fdf6d2ce7b9e0da0bcb27117b3f2550d5ce3d35d1c2b9d2b9c1ce350593ad7ef"
+			"computedHash": "08249c3111299bfc3faa23c02245c012a06760bde554ee773829027fd108179b"
 		},
 		"to-tickets": {
 			"source": "endalk200/skills",
 			"sourceType": "github",
 			"skillPath": "skills/to-tickets/SKILL.md",
-			"computedHash": "5ed5de7f2083309ec503df80832f62dfc9ddf820b5cc611a4b61adc79ada571b"
+			"computedHash": "59f439ab14c81f7907edf350890fc5cf284127ea3769fab99bfbb0b6a30d5294"
 		},
 		"turborepo": {
 			"source": "vercel/turborepo",
@@ -149,13 +149,13 @@
 			"source": "endalk200/skills",
 			"sourceType": "github",
 			"skillPath": "skills/wayfinder/SKILL.md",
-			"computedHash": "aa3725aae01fcfed50588e753631ea37d64231ec6019d6003f4f114f12b626e3"
+			"computedHash": "8a0078673689881112293e673bc0c108d00103e81cf174aa59f75152f6c87fcd"
 		},
 		"writing-great-skills": {
 			"source": "endalk200/skills",
 			"sourceType": "github",
 			"skillPath": "skills/writing-great-skills/SKILL.md",
-			"computedHash": "42fe94c64d7b9acda9ce7d6495a3476893a1b18615986528f55f7162a29789d4"
+			"computedHash": "7d05e01b83bd39ef664ba62e65d667983389ce40133e62d9c3dd313a9e812b3c"
 		}
 	}
 }
