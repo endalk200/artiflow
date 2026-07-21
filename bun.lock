@@ -22,6 +22,7 @@
       },
       "devDependencies": {
         "@app/api-contract": "*",
+        "@app/telemetry-config": "*",
         "@app/typescript-config": "*",
         "@effect/platform-node": "4.0.0-beta.98",
         "@effect/vitest": "4.0.0-beta.98",
@@ -37,6 +38,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@app/api-contract": "*",
+        "@app/telemetry-config": "*",
         "@app/ui": "*",
         "@effect/opentelemetry": "4.0.0-beta.98",
         "@effect/sql-pg": "4.0.0-beta.98",
@@ -115,6 +117,17 @@
       "name": "@app/biome-config",
       "version": "0.0.0",
     },
+    "packages/telemetry-config": {
+      "name": "@app/telemetry-config",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@app/biome-config": "*",
+        "@app/typescript-config": "*",
+        "@types/node": "^22.15.3",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.8",
+      },
+    },
     "packages/typescript-config": {
       "name": "@app/typescript-config",
       "version": "0.0.0",
@@ -163,6 +176,8 @@
     "@app/api-contract": ["@app/api-contract@workspace:packages/api-contract"],
 
     "@app/biome-config": ["@app/biome-config@workspace:packages/biome-config"],
+
+    "@app/telemetry-config": ["@app/telemetry-config@workspace:packages/telemetry-config"],
 
     "@app/typescript-config": ["@app/typescript-config@workspace:packages/typescript-config"],
 
