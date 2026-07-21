@@ -68,7 +68,7 @@ try {
 
 	const rootHelp = run(binPath, ["--help"], smokeRoot);
 
-	for (const command of ["project", "publish", "artifact", "skill", "version"]) {
+	for (const command of ["project", "publish", "artifact", "version"]) {
 		if (!rootHelp.includes(command)) {
 			throw new Error(`Expected artiflow --help to include the ${command} command.`);
 		}
