@@ -12,7 +12,8 @@ import Link from "next/link";
 import { CopyButton } from "../components/site/copy-button";
 
 const CLI_INSTALL_COMMAND = "npm install -g artiflow";
-const SKILL_INSTALL_COMMAND = "artiflow skill install";
+const SKILL_INSTALL_COMMAND =
+	"npx skills add https://github.com/endalk200/artiflow";
 
 const AGENT_SETUP_PROMPT = `Set up Artiflow in this repository so you can publish visual artifacts:
 
@@ -33,7 +34,7 @@ const SETUP_STEPS = [
 	{
 		command: SKILL_INSTALL_COMMAND,
 		description:
-			"Adds the explicit-only Artiflow Skill to this project. Use --global to make it available across projects.",
+			"Adds the explicit-only Artiflow Skill to this project. Append --global to make it available across projects.",
 		title: "Install the agent Skill",
 	},
 	{

@@ -19,12 +19,7 @@ import type {
 	ProjectManifestFileError,
 	ProjectManifestNotFound,
 } from "../project-manifest.js";
-import type {
-	ArtifactProjectMismatch,
-	DestructiveConfirmationRequired,
-	SkillInstallError,
-	SourceFileError,
-} from "./command-errors.js";
+import type { ArtifactProjectMismatch, DestructiveConfirmationRequired, SourceFileError } from "./command-errors.js";
 
 export const CLI_EXIT_CODES = {
 	conflict: 4,
@@ -108,8 +103,6 @@ export const handleCliFailure = {
 		),
 	ProjectNotFound: (error: ProjectNotFound) =>
 		printAndFail(error, `Project ${error.projectId} was not found.`, CLI_EXIT_CODES.notFound),
-	SkillInstallError: (error: SkillInstallError) =>
-		printAndFail(error, `Could not install Skill at ${error.path}: ${error.message}`, CLI_EXIT_CODES.invalidInput),
 	SourceFileError: (error: SourceFileError) =>
 		printAndFail(
 			error,

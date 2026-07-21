@@ -1,5 +1,4 @@
 import { createRequire } from "node:module";
-import { readFileSync } from "node:fs";
 import { ArtiflowApiClient, type ArtiflowApiClientShape } from "./api-client.js";
 import { InvalidRequest } from "@app/api-contract/models";
 import { assert, describe, it } from "@effect/vitest";
@@ -14,7 +13,6 @@ import { withoutConsoleLogger } from "./runtime/telemetry.js";
 
 const require = createRequire(import.meta.url);
 const cliPackage = require("../package.json") as { readonly version: string };
-const legacyArtiflowSkill = readFileSync(new URL("./fixtures/legacy-artiflow-skill.md", import.meta.url), "utf8");
 
 const TerminalLayer = Layer.succeed(
 	Terminal.Terminal,
@@ -98,25 +96,6 @@ const runArtiflowCommand = (
 	client: ArtiflowApiClientShape = {} as ArtiflowApiClientShape,
 ) => captureArtiflowCommand(args).pipe(withIsolatedArtiflowEnvironment, Effect.provide(cliTestLayer(files, client)));
 
-const runArtiflowCommands = (
-	commands: ReadonlyArray<ReadonlyArray<string>>,
-	files: Record<string, string> = {},
-	client: ArtiflowApiClientShape = {} as ArtiflowApiClientShape,
-) =>
-	Effect.forEach(commands, captureArtiflowCommand).pipe(
-		withIsolatedArtiflowEnvironment,
-		Effect.provide(cliTestLayer(files, client)),
-	);
-
-type SkillInstallResult = {
-	readonly paths: ReadonlyArray<string>;
-	readonly scope: "global" | "project";
-	readonly status: "installed" | "unchanged" | "updated";
-};
-
-const parseLastResult = (stdout: ReadonlyArray<unknown>): SkillInstallResult =>
-	JSON.parse(String(stdout.at(-1) ?? "")) as SkillInstallResult;
-
 describe("artiflow CLI", () => {
 	it.effect("prints root help and succeeds when invoked without arguments", () =>
 		Effect.gen(function* () {
@@ -128,7 +107,7 @@ describe("artiflow CLI", () => {
 			assert.include(stdoutText, "project");
 			assert.include(stdoutText, "publish");
 			assert.include(stdoutText, "artifact");
-			assert.include(stdoutText, "skill");
+			assert.notInclude(stdoutText, "skill");
 			assert.include(stdoutText, "version");
 		}),
 	);
@@ -195,110 +174,6 @@ describe("artiflow CLI", () => {
 				revisionNumber: 1,
 				url: "http://localhost:3000/artifacts/art_cli",
 			});
-		}),
-	);
-
-	it.effect("installs the explicit-only agent Skill for the current project by default", () =>
-		Effect.gen(function* () {
-			const files: Record<string, string> = {};
-			const { stdout } = yield* runArtiflowCommand(["skill", "install", "--json"], files);
-			const result = parseLastResult(stdout);
-			const normalizedPaths = result.paths.map((path) => path.replaceAll("\\", "/"));
-			const cwd = process.cwd().replaceAll("\\", "/");
-
-			assert.strictEqual(result.scope, "project");
-			assert.strictEqual(result.status, "installed");
-			assert.deepStrictEqual(normalizedPaths, [
-				`${cwd}/.agents/skills/artiflow/SKILL.md`,
-				`${cwd}/.agents/skills/artiflow/agents/openai.yaml`,
-				`${cwd}/.claude/skills/artiflow/SKILL.md`,
-				`${cwd}/.claude/skills/artiflow/agents/openai.yaml`,
-			]);
-			for (const path of result.paths.filter((path) => path.endsWith("SKILL.md"))) {
-				const skill = files[path] ?? "";
-				assert.include(skill, "disable-model-invocation: true");
-				assert.include(skill, 'opencode/autoinvoke: "false"');
-				assert.include(skill, 'artiflow/managed: "true"');
-				assert.include(skill, "Top-level imports and exports are unsupported.");
-				assert.include(skill, "the agent's browser capability when one is available");
-			}
-			for (const path of result.paths.filter((path) => path.endsWith("openai.yaml"))) {
-				assert.include(files[path] ?? "", "allow_implicit_invocation: false");
-			}
-		}),
-	);
-
-	it.effect("installs the agent Skill globally and reports unchanged repeat installations", () =>
-		Effect.gen(function* () {
-			const files: Record<string, string> = {};
-			const [first, second] = yield* runArtiflowCommands(
-				[
-					["skill", "install", "--global", "--json"],
-					["skill", "install", "--global", "--json"],
-				],
-				files,
-			);
-			if (first === undefined || second === undefined) {
-				return assert.fail("Expected both Skill installation command results.");
-			}
-			const firstResult = parseLastResult(first.stdout);
-			const secondResult = parseLastResult(second.stdout);
-
-			assert.strictEqual(firstResult.scope, "global");
-			assert.strictEqual(firstResult.status, "installed");
-			assert.strictEqual(secondResult.status, "unchanged");
-			assert.isTrue(firstResult.paths.some((path) => path.replaceAll("\\", "/").includes("/.agents/skills/")));
-			assert.isTrue(firstResult.paths.some((path) => path.replaceAll("\\", "/").includes("/.claude/skills/")));
-		}),
-	);
-
-	it.effect("updates the legacy generated Skill without requiring force", () =>
-		Effect.gen(function* () {
-			const cwd = process.cwd().replaceAll("\\", "/");
-			const skillPath = `${cwd}/.agents/skills/artiflow/SKILL.md`;
-			const files: Record<string, string> = { [skillPath]: legacyArtiflowSkill.replaceAll("\n", "\r\n") };
-
-			const { stdout } = yield* runArtiflowCommand(["skill", "install", "--json"], files);
-			assert.strictEqual(parseLastResult(stdout).status, "updated");
-			assert.include(files[skillPath] ?? "", 'artiflow/managed: "true"');
-		}),
-	);
-
-	it.effect("protects an unrecognized existing Skill unless force is explicit", () =>
-		Effect.gen(function* () {
-			const cwd = process.cwd().replaceAll("\\", "/");
-			const skillPath = `${cwd}/.agents/skills/artiflow/SKILL.md`;
-			const customSkill = `---
-name: artiflow
-description: Custom
----
-
-This documentation mentions artiflow/managed: "true" but does not opt into managed updates.
-`;
-			const files: Record<string, string> = { [skillPath]: customSkill };
-
-			const error = yield* Effect.flip(runArtiflowCommand(["skill", "install", "--json"], files));
-			assert.strictEqual(error._tag, "SkillInstallError");
-			assert.include(error.message, "--force");
-			assert.strictEqual(files[skillPath], customSkill);
-
-			const { stdout } = yield* runArtiflowCommand(["skill", "install", "--force", "--json"], files);
-			const result = parseLastResult(stdout);
-			assert.strictEqual(result.status, "updated");
-			assert.include(files[skillPath] ?? "", 'artiflow/managed: "true"');
-		}),
-	);
-
-	it.effect("protects an unmanaged invocation-policy file when no Skill owns its directory", () =>
-		Effect.gen(function* () {
-			const cwd = process.cwd().replaceAll("\\", "/");
-			const metadataPath = `${cwd}/.agents/skills/artiflow/agents/openai.yaml`;
-			const files: Record<string, string> = { [metadataPath]: "custom: policy\n" };
-
-			const error = yield* Effect.flip(runArtiflowCommand(["skill", "install", "--json"], files));
-			if (error._tag !== "SkillInstallError") return assert.fail(`Expected SkillInstallError, received ${error._tag}`);
-			assert.strictEqual(error.path.replaceAll("\\", "/"), metadataPath);
-			assert.strictEqual(files[metadataPath], "custom: policy\n");
 		}),
 	);
 

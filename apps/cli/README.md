@@ -11,24 +11,22 @@ artiflow --help
 
 ## Install the agent Skill
 
-Install the explicit-only Artiflow Skill for the current codebase:
+Install the explicit-only Artiflow Skill for the current codebase with the
+[Skills CLI](https://skills.sh/):
 
 ```sh
-artiflow skill install
+npx skills add https://github.com/endalk200/artiflow
 ```
 
 Install it globally for the current user instead:
 
 ```sh
-artiflow skill install --global
+npx skills add https://github.com/endalk200/artiflow --global
 ```
 
-The installer writes the interoperable Agent Skills bundle under
-`.agents/skills/artiflow` and a Claude Code-compatible copy under
-`.claude/skills/artiflow`. It configures explicit invocation for Codex,
-OpenCode, Claude Code, and Cursor. Repeating the command updates a managed
-installation or reports that it is already current. An unmanaged existing
-Artiflow Skill is preserved unless `--force` is supplied.
+The Skills CLI discovers the Artiflow Skill from this repository and installs
+it for the selected agents. Project scope is the default; `--global` makes the
+Skill available across projects for the current user.
 
 ## Configuration
 
