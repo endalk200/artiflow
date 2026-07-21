@@ -1,5 +1,11 @@
 # artiflow
 
+## 0.2.0
+
+### Minor Changes
+
+- 9961537: Remove the `artiflow skill install` command and distribute the Artiflow Skill through the Skills CLI. Install it with `npx skills add https://github.com/endalk200/artiflow` instead.
+
 ## 0.1.0
 
 ### Minor Changes
