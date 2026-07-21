@@ -16,6 +16,10 @@ import {
 } from "@app/api-contract/models";
 import { Context, Effect, Layer, Option } from "effect";
 
+import {
+	recordOperationInfo,
+	recordOperationWarning,
+} from "../telemetry/operation";
 import { ArtiflowRepository, type StoredRevision } from "./repository";
 import { validateArtifactSource } from "./source-validator";
 
@@ -134,22 +138,55 @@ export class ArtifactService extends Context.Service<
 						});
 						switch (result._tag) {
 							case "artifactNotFound":
+								yield* recordOperationWarning(
+									"Artifact revision target not found",
+									{
+										"artiflow.artifact.id": artifactId,
+										"artiflow.operation.outcome": "not_found",
+									},
+								);
 								return yield* new ArtifactNotFound({ artifactId });
 							case "conflict":
+								yield* recordOperationWarning("Artifact revision conflict", {
+									"artiflow.artifact.id": artifactId,
+									"artiflow.operation.outcome": "conflict",
+								});
 								return yield* new ArtifactRevisionConflict({
 									artifactId,
 									currentRevisionId: result.currentRevisionId,
 									expectedCurrentRevisionId: payload.expectedCurrentRevisionId,
 								});
 							case "idempotencyConflict":
+								yield* recordOperationWarning(
+									"Artifact revision idempotency conflict",
+									{
+										"artiflow.artifact.id": artifactId,
+										"artiflow.operation.outcome": "conflict",
+									},
+								);
 								return yield* new IdempotencyConflict({
 									idempotencyKey: payload.idempotencyKey,
 								});
 							case "created":
-							case "replayed":
-								return toPublishResult(result.publication);
+							case "replayed": {
+								const publication = toPublishResult(result.publication);
+								yield* recordOperationInfo("Artifact revision persisted", {
+									"artiflow.artifact.id": artifactId,
+									"artiflow.operation.outcome": result._tag,
+									"artiflow.revision.id": publication.revisionId,
+									"artiflow.revision.number": publication.revisionNumber,
+								});
+								return publication;
+							}
 						}
-					}),
+					}).pipe(
+						Effect.withSpan("artiflow.artifact.append_revision", {
+							attributes: {
+								"artiflow.artifact.id": artifactId,
+								"artiflow.source_format.version": payload.sourceFormatVersion,
+							},
+						}),
+					),
 				create: (projectId, payload) =>
 					Effect.gen(function* () {
 						if (payload.sourceFormatVersion !== 1) {
@@ -174,26 +211,63 @@ export class ArtifactService extends Context.Service<
 						});
 						switch (result._tag) {
 							case "conflict":
+								yield* recordOperationWarning(
+									"Artifact creation idempotency conflict",
+									{
+										"artiflow.operation.outcome": "conflict",
+										"artiflow.project.id": projectId,
+									},
+								);
 								return yield* new IdempotencyConflict({
 									idempotencyKey: payload.idempotencyKey,
 								});
 							case "projectNotFound":
+								yield* recordOperationWarning(
+									"Artifact creation project not found",
+									{
+										"artiflow.operation.outcome": "not_found",
+										"artiflow.project.id": projectId,
+									},
+								);
 								return yield* new ProjectNotFound({ projectId });
 							case "created":
-							case "replayed":
-								return toPublishResult(result.publication);
+							case "replayed": {
+								const publication = toPublishResult(result.publication);
+								yield* recordOperationInfo("Artifact persisted", {
+									"artiflow.artifact.id": publication.artifactId,
+									"artiflow.operation.outcome": result._tag,
+									"artiflow.project.id": projectId,
+									"artiflow.revision.id": publication.revisionId,
+									"artiflow.revision.number": publication.revisionNumber,
+								});
+								return publication;
+							}
 						}
-					}),
+					}).pipe(
+						Effect.withSpan("artiflow.artifact.create", {
+							attributes: {
+								"artiflow.project.id": projectId,
+								"artiflow.source_format.version": payload.sourceFormatVersion,
+							},
+						}),
+					),
 				delete: (artifactId) =>
-					repository
-						.deleteArtifact(artifactId)
-						.pipe(
-							Effect.flatMap((deleted) =>
-								deleted
-									? Effect.void
-									: Effect.fail(new ArtifactNotFound({ artifactId })),
-							),
+					repository.deleteArtifact(artifactId).pipe(
+						Effect.flatMap((deleted) =>
+							deleted
+								? Effect.void
+								: Effect.fail(new ArtifactNotFound({ artifactId })),
 						),
+						Effect.tap(() =>
+							recordOperationInfo("Artifact deleted", {
+								"artiflow.artifact.id": artifactId,
+								"artiflow.operation.outcome": "deleted",
+							}),
+						),
+						Effect.withSpan("artiflow.artifact.delete", {
+							attributes: { "artiflow.artifact.id": artifactId },
+						}),
+					),
 				get: (artifactId) =>
 					repository.getArtifact(artifactId).pipe(
 						Effect.flatMap(
@@ -202,6 +276,9 @@ export class ArtifactService extends Context.Service<
 								onSome: Effect.succeed,
 							}),
 						),
+						Effect.withSpan("artiflow.artifact.get", {
+							attributes: { "artiflow.artifact.id": artifactId },
+						}),
 					),
 				getRevision: (artifactId, revisionNumber) =>
 					Effect.gen(function* () {
@@ -222,7 +299,16 @@ export class ArtifactService extends Context.Service<
 								),
 							onSome: Effect.succeed,
 						});
-					}),
+					}).pipe(
+						Effect.withSpan("artiflow.artifact.get_revision", {
+							attributes: {
+								"artiflow.artifact.id": artifactId,
+								...(revisionNumber === undefined
+									? {}
+									: { "artiflow.revision.number": revisionNumber }),
+							},
+						}),
+					),
 				list: (projectId) =>
 					repository.listArtifacts(projectId).pipe(
 						Effect.flatMap(
@@ -231,6 +317,9 @@ export class ArtifactService extends Context.Service<
 								onSome: Effect.succeed,
 							}),
 						),
+						Effect.withSpan("artiflow.artifact.list", {
+							attributes: { "artiflow.project.id": projectId },
+						}),
 					),
 			});
 		}),

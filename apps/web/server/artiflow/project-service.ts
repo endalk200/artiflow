@@ -8,6 +8,10 @@ import {
 } from "@app/api-contract/models";
 import { Context, Effect, Layer, Option } from "effect";
 
+import {
+	recordOperationInfo,
+	recordOperationWarning,
+} from "../telemetry/operation";
 import { ArtiflowRepository, type ProjectListItem } from "./repository";
 
 const normalizeProjectName = (name: string) => name.trim().replace(/\s+/g, " ");
@@ -73,23 +77,35 @@ export class ProjectService extends Context.Service<
 						});
 
 						if (result._tag === "conflict") {
+							yield* recordOperationWarning(
+								"Project creation idempotency conflict",
+								{ "artiflow.operation.outcome": "conflict" },
+							);
 							return yield* new IdempotencyConflict({
 								idempotencyKey: payload.idempotencyKey,
 							});
 						}
 
+						yield* recordOperationInfo("Project persisted", {
+							"artiflow.operation.outcome": result._tag,
+							"artiflow.project.id": result.project.id,
+						});
 						return result.project;
-					}),
+					}).pipe(Effect.withSpan("artiflow.project.create")),
 				delete: (projectId) =>
-					repository
-						.deleteProject(projectId)
-						.pipe(
-							Effect.flatMap((deleted) =>
-								deleted
-									? Effect.void
-									: Effect.fail(new ProjectNotFound({ projectId })),
-							),
-						),
+					Effect.gen(function* () {
+						const deleted = yield* repository.deleteProject(projectId);
+						if (!deleted) return yield* new ProjectNotFound({ projectId });
+
+						yield* recordOperationInfo("Project deleted", {
+							"artiflow.operation.outcome": "deleted",
+							"artiflow.project.id": projectId,
+						});
+					}).pipe(
+						Effect.withSpan("artiflow.project.delete", {
+							attributes: { "artiflow.project.id": projectId },
+						}),
+					),
 				get: (projectId) =>
 					repository.getProject(projectId).pipe(
 						Effect.flatMap(
@@ -98,8 +114,14 @@ export class ProjectService extends Context.Service<
 								onSome: Effect.succeed,
 							}),
 						),
+						Effect.withSpan("artiflow.project.get", {
+							attributes: { "artiflow.project.id": projectId },
+						}),
 					),
-				list: () => repository.listProjects(),
+				list: () =>
+					repository
+						.listProjects()
+						.pipe(Effect.withSpan("artiflow.project.list")),
 				rename: (projectId, requestedName) =>
 					Effect.gen(function* () {
 						const name = yield* validateProjectName(requestedName);
@@ -108,11 +130,20 @@ export class ProjectService extends Context.Service<
 							name,
 							new Date().toISOString(),
 						);
-						return yield* Option.match(project, {
+						const renamed = yield* Option.match(project, {
 							onNone: () => Effect.fail(new ProjectNotFound({ projectId })),
 							onSome: Effect.succeed,
 						});
-					}),
+						yield* recordOperationInfo("Project renamed", {
+							"artiflow.operation.outcome": "renamed",
+							"artiflow.project.id": projectId,
+						});
+						return renamed;
+					}).pipe(
+						Effect.withSpan("artiflow.project.rename", {
+							attributes: { "artiflow.project.id": projectId },
+						}),
+					),
 			});
 		}),
 	);
