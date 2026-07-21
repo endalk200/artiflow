@@ -239,4 +239,4 @@ export const validateArtifactSource = (
 		const metadata = yield* validateFrontmatter(frontmatter);
 		yield* smokeRender(source);
 		return { ...metadata, source };
-	});
+	}).pipe(Effect.withSpan("artiflow.artifact.validate_source"));
