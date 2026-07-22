@@ -20,7 +20,7 @@ export function ProjectsPageView({
 	readonly projects: ReadonlyArray<ProjectListRow>;
 }) {
 	return (
-		<main className="mx-auto w-full max-w-5xl px-6 py-12 lg:px-10">
+		<main className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-10">
 			<header className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
 				<div>
 					<h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
