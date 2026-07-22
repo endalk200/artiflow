@@ -4,6 +4,17 @@ Artiflow exports traces and structured logs from both the Next.js server and
 the CLI over OTLP/HTTP protobuf. Telemetry is enabled by default and targets a
 local OpenTelemetry collector at `http://127.0.0.1:4318`.
 
+The CLI can persistently disable telemetry in `~/.artiflow/config.toml`:
+
+```toml
+telemetry = false
+```
+
+The config setting applies only to the CLI. A non-empty `OTEL_SDK_DISABLED`
+takes precedence over the config file: `true` disables telemetry and `false`
+enables it. An unset or empty value defers to the config file. The web server is
+configured only through the environment variable.
+
 ## Configuration
 
 Set the standard OpenTelemetry base endpoint for either executable:
@@ -51,10 +62,11 @@ render, and fetch spans. Effect uses the registered global providers, and both
 server actions/pages and the Effect HTTP API explicitly continue the active
 Next.js span before recording domain and SQL work.
 
-The CLI owns a scoped Effect telemetry layer. It records an `artiflow.cli`
-span, Effect HTTP client spans, and structured logs. The scoped layer batches
-and flushes pending telemetry when the CLI exits. Final export is bounded to
-500 milliseconds so a missing or hanging collector does not stall commands.
+The CLI owns a scoped Effect telemetry layer. It records a bounded,
+command-specific root span such as `artiflow.cli.project.create`, Effect HTTP
+client spans, and structured logs. The scoped layer batches and flushes pending
+telemetry when the CLI exits. Final export is bounded to 500 milliseconds so a
+missing or hanging collector does not stall commands.
 
 Stable domain spans include project and artifact create, read, list, rename,
 delete, revision, and source-validation operations. Effect SQL and HTTP client
@@ -85,7 +97,7 @@ exercise both executables. A CLI request to the web API should produce a trace
 tree similar to:
 
 ```text
-artiflow.cli
+artiflow.cli.publish
   -> http.client POST
     -> Next.js request/route
       -> artiflow.artifact.create

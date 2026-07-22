@@ -82,7 +82,7 @@ It provides a scoped telemetry layer around the program and records service meta
 The desired end-to-end publish trace is:
 
 ```text
-artiflow.cli
+artiflow.cli.publish
   └─ http.client POST
       └─ Next.js request/route span
           └─ artiflow.artifact.create (or append_revision)
@@ -112,10 +112,10 @@ artiflow.artifact.append_revision
 artiflow.artifact.get_revision
 artiflow.artifact.delete
 artiflow.artifact.validate_source
-artiflow.cli
+artiflow.cli.<command>
 ```
 
-The CLI root span should stay `artiflow.cli`, with the known command catalog stored in `artiflow.cli.command.name`. The current CLI derives a span name from every non-flag argument and records both `artiflow.cli.args` and the raw argument array in a log. Positional values include source paths, project names, and identifiers; remove those recordings. A command name may be used as an attribute only after parsing it against the finite command catalog.
+The CLI root span should use the known command catalog, such as `artiflow.cli.project.create`, and also store that catalog value in `artiflow.cli.command.name`. A command name may be used in the span name or as an attribute only after parsing it against the finite command catalog. Positional values include source paths, project names, and identifiers, so raw arguments and names derived from them must not be recorded.
 
 Recommended custom attributes, added only where useful:
 

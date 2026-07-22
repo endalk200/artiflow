@@ -5,7 +5,7 @@ import { TestConsole } from "effect/testing";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { traceCliRun } from "../cli/run.js";
-import { telemetryLayerFromEnvironment } from "./telemetry.js";
+import { resolveCliTelemetryPreference, telemetryLayerFromEnvironment } from "./telemetry.js";
 
 type ExportRequest = {
 	readonly body: Buffer;
@@ -24,6 +24,35 @@ afterEach(() => {
 });
 
 describe("CLI telemetry", () => {
+	it("uses the config setting unless OTEL_SDK_DISABLED is explicitly set", () => {
+		expect(resolveCliTelemetryPreference({}, true).enabled).toBe(true);
+		expect(resolveCliTelemetryPreference({}, false).enabled).toBe(false);
+		expect(resolveCliTelemetryPreference({ OTEL_SDK_DISABLED: "" }, false).enabled).toBe(false);
+		expect(resolveCliTelemetryPreference({ OTEL_SDK_DISABLED: "   " }, false).enabled).toBe(false);
+		expect(resolveCliTelemetryPreference({ OTEL_SDK_DISABLED: "true" }, true).enabled).toBe(false);
+		expect(resolveCliTelemetryPreference({ OTEL_SDK_DISABLED: "false" }, false).enabled).toBe(true);
+	});
+
+	it("warns and falls back to enabled for an invalid OTEL_SDK_DISABLED value", async () => {
+		const errors = await Effect.runPromise(
+			TestConsole.errorLines.pipe(
+				Effect.provide(
+					telemetryLayerFromEnvironment(
+						{
+							OTEL_SDK_DISABLED: "invalid",
+						},
+						false,
+					),
+				),
+				Effect.provide(TestConsole.layer),
+			),
+		);
+
+		expect(errors).toEqual([
+			'Warning: Invalid OTEL_SDK_DISABLED value. Expected "true" or "false"; treating it as "false".',
+		]);
+	});
+
 	it("warns and keeps running when the endpoint is invalid", async () => {
 		const errors = await Effect.runPromise(
 			Effect.gen(function* () {
@@ -40,6 +69,25 @@ describe("CLI telemetry", () => {
 		);
 
 		expect(errors).toEqual([
+			"Warning: Invalid OTEL_EXPORTER_OTLP_ENDPOINT. Expected an absolute HTTP or HTTPS URL. Telemetry disabled.",
+		]);
+	});
+
+	it("preserves both warnings when the disable value and endpoint are invalid", async () => {
+		const errors = await Effect.runPromise(
+			TestConsole.errorLines.pipe(
+				Effect.provide(
+					telemetryLayerFromEnvironment({
+						OTEL_EXPORTER_OTLP_ENDPOINT: "ftp://collector.example.com",
+						OTEL_SDK_DISABLED: "invalid",
+					}),
+				),
+				Effect.provide(TestConsole.layer),
+			),
+		);
+
+		expect(errors).toEqual([
+			'Warning: Invalid OTEL_SDK_DISABLED value. Expected "true" or "false"; treating it as "false".',
 			"Warning: Invalid OTEL_EXPORTER_OTLP_ENDPOINT. Expected an absolute HTTP or HTTPS URL. Telemetry disabled.",
 		]);
 	});
@@ -89,7 +137,8 @@ describe("CLI telemetry", () => {
 		const tracePayload = traces[0]?.body.toString("utf8") ?? "";
 		const logPayload = logs[0]?.body.toString("utf8") ?? "";
 		expect(tracePayload).toContain("artiflow-cli");
-		expect(tracePayload).toContain("artiflow.cli");
+		expect(tracePayload).toContain("artiflow.cli.version");
+		expect(tracePayload).toContain("artiflow.cli.unknown");
 		expect(logPayload).toContain("artiflow-cli");
 		expect(logPayload).toContain("Artiflow CLI command completed");
 		expect(logPayload).toContain("Artiflow CLI command failed");

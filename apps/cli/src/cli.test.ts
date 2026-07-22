@@ -102,6 +102,8 @@ describe("artiflow CLI", () => {
 		assert.strictEqual(commandNameFromArgs(["publish", "show"]), "publish");
 		assert.strictEqual(commandNameFromArgs(["project", "create", "Private project name"]), "project create");
 		assert.strictEqual(commandNameFromArgs(["unknown", "publish"]), "unknown");
+		assert.strictEqual(commandNameFromArgs(["publish", "--", "--version"]), "publish");
+		assert.strictEqual(commandNameFromArgs(["project", "create", "--", "-v"]), "project create");
 	});
 
 	it.effect("prints root help and succeeds when invoked without arguments", () =>

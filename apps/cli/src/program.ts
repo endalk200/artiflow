@@ -9,13 +9,10 @@ import { handleCliFailure } from "./runtime/failures.js";
 import { telemetryLayer } from "./runtime/telemetry.js";
 
 const ArtiflowConfigLayer = ArtiflowConfig.layer;
-const ApiClientLayer = ArtiflowApiClient.Default.pipe(Layer.provide(ArtiflowConfigLayer), Layer.provide(layerFetch));
-const ApplicationLayer = Layer.mergeAll(ArtiflowConfigLayer, ApiClientLayer).pipe(
+const ApiClientLayer = ArtiflowApiClient.Default.pipe(Layer.provide(layerFetch));
+const ApplicationLayer = Layer.mergeAll(ApiClientLayer, telemetryLayer).pipe(
+	Layer.provideMerge(ArtiflowConfigLayer),
 	Layer.provideMerge(NodeServices.layer),
 );
 
-export const program = runCli.pipe(
-	Effect.provide(ApplicationLayer),
-	Effect.catchTags(handleCliFailure),
-	Effect.provide(telemetryLayer),
-);
+export const program = runCli.pipe(Effect.provide(ApplicationLayer), Effect.catchTags(handleCliFailure));
