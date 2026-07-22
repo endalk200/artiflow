@@ -2,7 +2,7 @@ import { assert, describe, it } from "@effect/vitest";
 import { Context, Effect, Layer } from "effect";
 
 import { ArtiflowRepository } from "../artiflow/repository";
-import { makeApiHandler } from "./api-handler";
+import { makeApiHandler, makeRecoveringWebHandler } from "./api-handler";
 
 describe("Artiflow HTTP API", () => {
 	it("publishes an Artifact through the assembled Fetch handler", async () => {
@@ -168,6 +168,52 @@ describe("Artiflow HTTP API", () => {
 
 			assert.strictEqual(response.status, 201);
 			assert.strictEqual(initializationAttempts, 2);
+		} finally {
+			await app.dispose();
+		}
+	});
+
+	it("preserves initialization failure when disposing the failed handler also fails", async () => {
+		const initializationFailure = new Error("Database connection timed out");
+		const disposalFailure = new Error("Database pool cleanup failed");
+		const reportedFailures: Array<unknown> = [];
+		let generation = 0;
+		const app = makeRecoveringWebHandler(
+			() => {
+				generation += 1;
+				return generation === 1
+					? {
+							dispose: () => Promise.reject(disposalFailure),
+							handler: () => Promise.reject(initializationFailure),
+							isInitialized: () => false,
+						}
+					: {
+							dispose: () => Promise.resolve(),
+							handler: () =>
+								Promise.resolve(new Response(null, { status: 204 })),
+							isInitialized: () => true,
+						};
+			},
+			(cause) => reportedFailures.push(cause),
+		);
+
+		try {
+			let receivedFailure: unknown;
+			try {
+				await app.handler(new Request("http://localhost/api/projects"));
+			} catch (cause) {
+				receivedFailure = cause;
+			}
+
+			assert.strictEqual(receivedFailure, initializationFailure);
+			assert.deepStrictEqual(reportedFailures, [disposalFailure]);
+
+			const response = await app.handler(
+				new Request("http://localhost/api/projects"),
+			);
+
+			assert.strictEqual(response.status, 204);
+			assert.strictEqual(generation, 2);
 		} finally {
 			await app.dispose();
 		}
