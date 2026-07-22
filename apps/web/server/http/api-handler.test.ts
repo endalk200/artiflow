@@ -1,5 +1,5 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Context } from "effect";
+import { Context, Effect, Layer } from "effect";
 
 import { ArtiflowRepository } from "../artiflow/repository";
 import { makeApiHandler } from "./api-handler";
@@ -121,6 +121,53 @@ describe("Artiflow HTTP API", () => {
 					message: "Request payload does not match the API contract.",
 				});
 			}
+		} finally {
+			await app.dispose();
+		}
+	});
+
+	it("rebuilds the handler after its service layer fails to initialize", async () => {
+		let initializationAttempts = 0;
+		const repositoryLayer = Layer.unwrap(
+			Effect.sync(() => {
+				initializationAttempts += 1;
+				return initializationAttempts === 1
+					? Layer.effect(
+							ArtiflowRepository,
+							Effect.fail(new Error("Database connection timed out")),
+						)
+					: ArtiflowRepository.testLayer();
+			}),
+		);
+		const app = makeApiHandler(repositoryLayer);
+		const request = () =>
+			new Request("http://localhost/api/projects/", {
+				body: JSON.stringify({
+					idempotencyKey: "project_after_recovery",
+					name: "Recovered project",
+				}),
+				headers: { "content-type": "application/json" },
+				method: "POST",
+			});
+
+		try {
+			let initializationFailure: unknown;
+			try {
+				await app.handler(request(), Context.empty());
+			} catch (cause) {
+				initializationFailure = cause;
+			}
+			assert.strictEqual(
+				initializationFailure instanceof Error
+					? initializationFailure.message
+					: undefined,
+				"Database connection timed out",
+			);
+
+			const response = await app.handler(request(), Context.empty());
+
+			assert.strictEqual(response.status, 201);
+			assert.strictEqual(initializationAttempts, 2);
 		} finally {
 			await app.dispose();
 		}

@@ -83,12 +83,27 @@ export const makeApiHandler = <E>(
 		Layer.provide(HttpServer.layerServices),
 	);
 
-	const webHandler = HttpRouter.toWebHandler(
-		Layer.mergeAll(ApiLive, effectTelemetryLayer),
-	);
+	const AppLive = Layer.mergeAll(ApiLive, effectTelemetryLayer);
+	const makeWebHandler = () => {
+		let initialized = false;
+		const webHandler = HttpRouter.toWebHandler(
+			AppLive.pipe(
+				Layer.tap(() =>
+					Effect.sync(() => {
+						initialized = true;
+					}),
+				),
+			),
+		);
+		return {
+			...webHandler,
+			isInitialized: () => initialized,
+		};
+	};
+	let webHandler = makeWebHandler();
 
 	return {
-		...webHandler,
+		dispose: () => webHandler.dispose(),
 		handler: (request: Request, requestContext?: Context.Context<never>) => {
 			const parentContext = activeTraceContext();
 			const effectContext =
@@ -97,10 +112,19 @@ export const makeApiHandler = <E>(
 					: requestContext === undefined
 						? parentContext
 						: Context.merge(requestContext, parentContext);
-			return webHandler.handler(
-				request,
-				effectContext as Context.Context<never> | undefined,
-			);
+			const currentHandler = webHandler;
+			return currentHandler
+				.handler(request, effectContext as Context.Context<never> | undefined)
+				.catch(async (cause: unknown) => {
+					if (
+						currentHandler === webHandler &&
+						!currentHandler.isInitialized()
+					) {
+						webHandler = makeWebHandler();
+						await currentHandler.dispose();
+					}
+					throw cause;
+				});
 		},
 	};
 };
