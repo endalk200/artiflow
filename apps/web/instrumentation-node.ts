@@ -29,7 +29,9 @@ export const registerNodeInstrumentation = () => {
 			"service.version": WEB_TELEMETRY_SERVICE_VERSION,
 		},
 		logRecordProcessors: [
-			new BatchLogRecordProcessor(new OTLPLogExporter({ url: endpoints.logs })),
+			new BatchLogRecordProcessor({
+				exporter: new OTLPLogExporter({ url: endpoints.logs }),
+			}),
 		],
 		serviceName:
 			process.env.OTEL_SERVICE_NAME ?? DEFAULT_WEB_TELEMETRY_SERVICE_NAME,
