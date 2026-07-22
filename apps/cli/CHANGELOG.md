@@ -1,5 +1,11 @@
 # artiflow
 
+## 0.3.0
+
+### Minor Changes
+
+- 0da0637: Allow CLI telemetry to be enabled or disabled in the Artiflow config file and identify the bounded command in root span names.
+
 ## 0.2.1
 
 ### Patch Changes
