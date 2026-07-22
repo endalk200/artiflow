@@ -26,7 +26,7 @@ export function ProjectPageView({
 	readonly project: { readonly id: string; readonly name: string };
 }) {
 	return (
-		<main className="mx-auto w-full max-w-5xl px-6 py-10 lg:px-10">
+		<main className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-10">
 			<nav
 				aria-label="Breadcrumb"
 				className="flex items-center gap-1.5 text-sm text-muted-foreground"
