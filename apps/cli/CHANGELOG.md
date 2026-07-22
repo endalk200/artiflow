@@ -1,5 +1,11 @@
 # artiflow
 
+## 0.2.1
+
+### Patch Changes
+
+- 33c28dc: Add OpenTelemetry traces and structured logs for CLI commands, with configurable OTLP/HTTP export, bounded shutdown, stable command attributes, and end-to-end trace propagation into Artiflow web requests.
+
 ## 0.2.0
 
 ### Minor Changes
