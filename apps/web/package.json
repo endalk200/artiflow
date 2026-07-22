@@ -28,7 +28,7 @@
 		"drizzle-orm": "1.0.0-rc.4",
 		"effect": "4.0.0-beta.100",
 		"fumadocs-core": "16.11.5",
-		"jsdom": "29.1.1",
+		"jsdom": "26.1.0",
 		"lucide-react": "^1.25.0",
 		"mermaid": "11.16.0",
 		"next": "^16.2.11",
