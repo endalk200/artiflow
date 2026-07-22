@@ -67,6 +67,48 @@ const RequestSchemaErrorLive = HttpApiMiddleware.layerSchemaErrorTransform(
 	},
 );
 
+type RecoverableWebHandler = {
+	readonly dispose: () => Promise<void>;
+	readonly handler: (
+		request: Request,
+		requestContext?: Context.Context<never>,
+	) => Promise<Response>;
+	readonly isInitialized: () => boolean;
+};
+
+export const makeRecoveringWebHandler = (
+	makeWebHandler: () => RecoverableWebHandler,
+	reportDisposalFailure: (cause: unknown) => void = (cause) =>
+		console.error(
+			"Failed to dispose API handler after initialization failure.",
+			cause,
+		),
+) => {
+	let webHandler = makeWebHandler();
+	return {
+		dispose: () => webHandler.dispose(),
+		handler: (request: Request, requestContext?: Context.Context<never>) => {
+			const currentHandler = webHandler;
+			return currentHandler
+				.handler(request, requestContext)
+				.catch(async (cause: unknown) => {
+					if (
+						currentHandler === webHandler &&
+						!currentHandler.isInitialized()
+					) {
+						webHandler = makeWebHandler();
+						try {
+							await currentHandler.dispose();
+						} catch (disposalCause) {
+							reportDisposalFailure(disposalCause);
+						}
+					}
+					throw cause;
+				});
+		},
+	};
+};
+
 export const makeApiHandler = <E>(
 	repositoryLayer: Layer.Layer<ArtiflowRepository, E>,
 ) => {
@@ -100,7 +142,7 @@ export const makeApiHandler = <E>(
 			isInitialized: () => initialized,
 		};
 	};
-	let webHandler = makeWebHandler();
+	const webHandler = makeRecoveringWebHandler(makeWebHandler);
 
 	return {
 		dispose: () => webHandler.dispose(),
@@ -112,19 +154,10 @@ export const makeApiHandler = <E>(
 					: requestContext === undefined
 						? parentContext
 						: Context.merge(requestContext, parentContext);
-			const currentHandler = webHandler;
-			return currentHandler
-				.handler(request, effectContext as Context.Context<never> | undefined)
-				.catch(async (cause: unknown) => {
-					if (
-						currentHandler === webHandler &&
-						!currentHandler.isInitialized()
-					) {
-						webHandler = makeWebHandler();
-						await currentHandler.dispose();
-					}
-					throw cause;
-				});
+			return webHandler.handler(
+				request,
+				effectContext as Context.Context<never> | undefined,
+			);
 		},
 	};
 };
