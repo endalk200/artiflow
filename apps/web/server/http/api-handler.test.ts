@@ -176,6 +176,7 @@ describe("Artiflow HTTP API", () => {
 	it("preserves initialization failure when disposing the failed handler also fails", async () => {
 		const initializationFailure = new Error("Database connection timed out");
 		const disposalFailure = new Error("Database pool cleanup failed");
+		const reportingFailure = new Error("Cleanup error reporting failed");
 		const reportedFailures: Array<unknown> = [];
 		let generation = 0;
 		const app = makeRecoveringWebHandler(
@@ -194,7 +195,10 @@ describe("Artiflow HTTP API", () => {
 							isInitialized: () => true,
 						};
 			},
-			(cause) => reportedFailures.push(cause),
+			(cause) => {
+				reportedFailures.push(cause);
+				throw reportingFailure;
+			},
 		);
 
 		try {
