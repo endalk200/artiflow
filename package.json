@@ -6,7 +6,7 @@
 		"esbuild": "0.28.1",
 		"js-yaml": "5.2.1",
 		"turbo": "^2.9.14",
-		"typescript": "^7.0.2",
+		"typescript": "^6.0.3",
 		"undici": "8.8.0"
 	},
 	"engines": {

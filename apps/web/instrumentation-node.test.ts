@@ -16,7 +16,7 @@ describe("Next.js request error telemetry", () => {
 	it("emits useful route metadata without raw paths or error messages", async () => {
 		const exporter = new InMemoryLogRecordExporter();
 		const provider = new LoggerProvider({
-			processors: [new SimpleLogRecordProcessor(exporter)],
+			processors: [new SimpleLogRecordProcessor({ exporter })],
 		});
 		logs.setGlobalLoggerProvider(provider);
 

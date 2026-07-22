@@ -36,7 +36,7 @@ describe("Effect OpenTelemetry bridge", () => {
 
 		const logExporter = new InMemoryLogRecordExporter();
 		const loggerProvider = new LoggerProvider({
-			processors: [new SimpleLogRecordProcessor(logExporter)],
+			processors: [new SimpleLogRecordProcessor({ exporter: logExporter })],
 		});
 		logs.setGlobalLoggerProvider(loggerProvider);
 
@@ -70,7 +70,7 @@ describe("Effect OpenTelemetry bridge", () => {
 
 		const logExporter = new InMemoryLogRecordExporter();
 		const loggerProvider = new LoggerProvider({
-			processors: [new SimpleLogRecordProcessor(logExporter)],
+			processors: [new SimpleLogRecordProcessor({ exporter: logExporter })],
 		});
 		logs.setGlobalLoggerProvider(loggerProvider);
 
