@@ -17,6 +17,7 @@ import {
 	activeTraceContext,
 	continueActiveTrace,
 	effectTelemetryLayer,
+	effectTelemetryLayerFromEnvironment,
 } from "./effect";
 
 afterEach(() => {
@@ -26,6 +27,40 @@ afterEach(() => {
 });
 
 describe("Effect OpenTelemetry bridge", () => {
+	it("does not bridge Effect telemetry when the SDK is disabled", async () => {
+		const spanExporter = new InMemorySpanExporter();
+		const tracerProvider = new NodeTracerProvider({
+			spanProcessors: [new SimpleSpanProcessor(spanExporter)],
+		});
+		tracerProvider.register();
+
+		const logExporter = new InMemoryLogRecordExporter();
+		const loggerProvider = new LoggerProvider({
+			processors: [new SimpleLogRecordProcessor(logExporter)],
+		});
+		logs.setGlobalLoggerProvider(loggerProvider);
+
+		await Effect.runPromise(
+			Effect.logInfo("Telemetry disabled").pipe(
+				Effect.withSpan("artiflow.telemetry.disabled"),
+				Effect.provide(
+					effectTelemetryLayerFromEnvironment({
+						OTEL_SDK_DISABLED: "true",
+					}),
+				),
+			),
+		);
+		await Promise.all([
+			tracerProvider.forceFlush(),
+			loggerProvider.forceFlush(),
+		]);
+
+		expect(spanExporter.getFinishedSpans()).toEqual([]);
+		expect(logExporter.getFinishedLogRecords()).toEqual([]);
+
+		await Promise.all([tracerProvider.shutdown(), loggerProvider.shutdown()]);
+	});
+
 	it("parents Effect spans to Next.js spans and correlates structured logs", async () => {
 		const spanExporter = new InMemorySpanExporter();
 		const tracerProvider = new NodeTracerProvider({
