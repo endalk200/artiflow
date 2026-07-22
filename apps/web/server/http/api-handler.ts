@@ -100,7 +100,11 @@ export const makeRecoveringWebHandler = (
 						try {
 							await currentHandler.dispose();
 						} catch (disposalCause) {
-							reportDisposalFailure(disposalCause);
+							try {
+								reportDisposalFailure(disposalCause);
+							} catch {
+								// Reporting is best-effort; preserve the initialization failure.
+							}
 						}
 					}
 					throw cause;
