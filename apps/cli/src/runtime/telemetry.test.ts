@@ -117,6 +117,7 @@ describe("CLI telemetry", () => {
 		await Effect.runPromise(
 			Effect.all([
 				traceCliRun(["version"], Effect.void),
+				traceCliRun(["publish", "--help"], Effect.void),
 				Effect.exit(
 					traceCliRun(["unknown", "/private/source/report.mdx"], Effect.fail({ _tag: "InvalidRequest" as const })),
 				),
@@ -138,6 +139,7 @@ describe("CLI telemetry", () => {
 		const logPayload = logs[0]?.body.toString("utf8") ?? "";
 		expect(tracePayload).toContain("artiflow-cli");
 		expect(tracePayload).toContain("artiflow.cli.version");
+		expect(tracePayload).toContain("artiflow.cli.publish.help");
 		expect(tracePayload).toContain("artiflow.cli.unknown");
 		expect(logPayload).toContain("artiflow-cli");
 		expect(logPayload).toContain("Artiflow CLI command completed");

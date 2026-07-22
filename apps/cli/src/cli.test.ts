@@ -104,7 +104,23 @@ describe("artiflow CLI", () => {
 		assert.strictEqual(commandNameFromArgs(["unknown", "publish"]), "unknown");
 		assert.strictEqual(commandNameFromArgs(["publish", "--", "--version"]), "publish");
 		assert.strictEqual(commandNameFromArgs(["project", "create", "--", "-v"]), "project create");
+		assert.strictEqual(commandNameFromArgs(["--help"]), "help");
+		assert.strictEqual(commandNameFromArgs(["publish", "--help"]), "publish help");
+		assert.strictEqual(commandNameFromArgs(["project", "create", "-h"]), "project create help");
+		assert.strictEqual(commandNameFromArgs(["--help", "publish"]), "publish help");
+		assert.strictEqual(commandNameFromArgs(["publish", "--version", "--help"]), "publish help");
+		assert.strictEqual(commandNameFromArgs(["publish", "--", "--help"]), "publish");
 	});
+
+	it.effect("prints contextual command help without running the command", () =>
+		Effect.gen(function* () {
+			const { stdout } = yield* runArtiflowCommand(["publish", "--help"]);
+			const stdoutText = stdout.join("\n");
+
+			assert.include(stdoutText, "Publish MDX as a new Artifact or immutable Revision");
+			assert.include(stdoutText, "artiflow publish [flags] <source>");
+		}),
+	);
 
 	it.effect("prints root help and succeeds when invoked without arguments", () =>
 		Effect.gen(function* () {

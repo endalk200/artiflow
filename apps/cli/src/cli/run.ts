@@ -9,13 +9,7 @@ const commandMatches = (command: { readonly alias: string | undefined; readonly 
 
 const subcommandsOf = (command: typeof rootCommand) => command.subcommands.flatMap(({ commands }) => commands);
 
-export const commandNameFromArgs = (args: ReadonlyArray<string>): string => {
-	const delimiterIndex = args.indexOf("--");
-	const commandArgs = delimiterIndex === -1 ? args : args.slice(0, delimiterIndex);
-
-	if (commandArgs.includes("--version") || commandArgs.includes("-v")) return "version";
-	if (commandArgs[0] === "--help" || commandArgs[0] === "-h") return "help";
-
+const commandNameFromCommandArgs = (commandArgs: ReadonlyArray<string>): string => {
 	const root = commandArgs[0];
 	if (root === undefined) return "help";
 	const command = subcommandsOf(rootCommand).find((candidate) => commandMatches(candidate, root));
@@ -27,6 +21,22 @@ export const commandNameFromArgs = (args: ReadonlyArray<string>): string => {
 		.flatMap(({ commands }) => commands)
 		.find((candidate) => commandMatches(candidate, subcommand));
 	return nestedCommand === undefined ? command.name : `${command.name} ${nestedCommand.name}`;
+};
+
+export const commandNameFromArgs = (args: ReadonlyArray<string>): string => {
+	const delimiterIndex = args.indexOf("--");
+	const commandArgs = delimiterIndex === -1 ? args : args.slice(0, delimiterIndex);
+	const helpRequested = commandArgs.includes("--help") || commandArgs.includes("-h");
+	const versionRequested = commandArgs.includes("--version") || commandArgs.includes("-v");
+	const parsedCommandName = commandNameFromCommandArgs(
+		commandArgs.filter((arg) => arg !== "--help" && arg !== "-h" && arg !== "--version" && arg !== "-v"),
+	);
+
+	if (helpRequested) {
+		return parsedCommandName === "help" || parsedCommandName === "unknown" ? "help" : `${parsedCommandName} help`;
+	}
+	if (versionRequested) return "version";
+	return parsedCommandName;
 };
 
 const errorType = (error: unknown) =>
