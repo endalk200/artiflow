@@ -10,13 +10,13 @@
 		"@app/api-contract": "*",
 		"@app/telemetry-config": "*",
 		"@app/typescript-config": "*",
-		"@effect/platform-node": "4.0.0-beta.98",
-		"@effect/vitest": "4.0.0-beta.98",
-		"@types/node": "^22.15.3",
-		"effect": "4.0.0-beta.98",
-		"toml": "^4.1.1",
-		"typescript": "^6.0.3",
-		"vitest": "^4.1.8"
+		"@effect/platform-node": "4.0.0-beta.100",
+		"@effect/vitest": "4.0.0-beta.100",
+		"@types/node": "^26.1.1",
+		"effect": "4.0.0-beta.100",
+		"toml": "^5.0.0",
+		"typescript": "^7.0.2",
+		"vitest": "^4.1.10"
 	},
 	"bin": {
 		"artiflow": "dist/bin.js"
