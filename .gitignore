@@ -42,3 +42,5 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+/apps/web/.prisma
+/.artiflow
