@@ -41,10 +41,12 @@ The CLI also reads `~/.artiflow/config.toml` when present:
 
 ```toml
 base_url = "https://artiflow.example.com"
+telemetry = false
 ```
 
 Set `ARTIFLOW_CONFIG_PATH` to read a different config file. An
-`ARTIFLOW_BASE_URL` value takes precedence over the config file.
+`ARTIFLOW_BASE_URL` value takes precedence over `base_url`. Telemetry defaults
+to enabled; set `telemetry = false` to disable it persistently.
 
 ## Telemetry
 
@@ -60,6 +62,8 @@ OTEL_EXPORTER_OTLP_ENDPOINT=https://otel.example.com artiflow version
 
 `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` and
 `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` are optional full-URL overrides. Set
-`OTEL_SDK_DISABLED=true` to disable telemetry. See
+`OTEL_SDK_DISABLED=true` to disable telemetry. When set,
+`OTEL_SDK_DISABLED` takes precedence over the config file, so `false` explicitly
+enables telemetry; an unset or empty value defers to the config file. See
 [`docs/telemetry.md`](../../docs/telemetry.md) for the signal precedence,
 service identities, exported fields, and privacy policy.

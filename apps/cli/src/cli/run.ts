@@ -10,15 +10,18 @@ const commandMatches = (command: { readonly alias: string | undefined; readonly 
 const subcommandsOf = (command: typeof rootCommand) => command.subcommands.flatMap(({ commands }) => commands);
 
 export const commandNameFromArgs = (args: ReadonlyArray<string>): string => {
-	if (args.includes("--version") || args.includes("-v")) return "version";
-	if (args[0] === "--help" || args[0] === "-h") return "help";
+	const delimiterIndex = args.indexOf("--");
+	const commandArgs = delimiterIndex === -1 ? args : args.slice(0, delimiterIndex);
 
-	const root = args[0];
+	if (commandArgs.includes("--version") || commandArgs.includes("-v")) return "version";
+	if (commandArgs[0] === "--help" || commandArgs[0] === "-h") return "help";
+
+	const root = commandArgs[0];
 	if (root === undefined) return "help";
 	const command = subcommandsOf(rootCommand).find((candidate) => commandMatches(candidate, root));
 	if (command === undefined) return "unknown";
 
-	const subcommand = args[1];
+	const subcommand = commandArgs[1];
 	if (subcommand === undefined) return command.name;
 	const nestedCommand = command.subcommands
 		.flatMap(({ commands }) => commands)
@@ -38,6 +41,7 @@ const errorType = (error: unknown) =>
 export const traceCliRun = <E, R>(args: ReadonlyArray<string>, effect: Effect.Effect<void, E, R>) =>
 	Effect.suspend(() => {
 		const commandName = commandNameFromArgs(args);
+		const spanName = `artiflow.cli.${commandName.replaceAll(" ", ".")}`;
 		const annotations = {
 			"artiflow.cli.command.name": commandName,
 			"artiflow.cli.version": VERSION,
@@ -71,7 +75,7 @@ export const traceCliRun = <E, R>(args: ReadonlyArray<string>, effect: Effect.Ef
 				}),
 			);
 		}).pipe(
-			Effect.withSpan("artiflow.cli", {
+			Effect.withSpan(spanName, {
 				attributes: annotations,
 			}),
 		);

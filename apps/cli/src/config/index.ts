@@ -10,10 +10,12 @@ export const CONFIG_PATH_ENV = "ARTIFLOW_CONFIG_PATH";
 
 export type ArtiflowConfiguration = {
 	readonly baseUrl: string;
+	readonly telemetryEnabled: boolean;
 };
 
 export const defaultArtiflowConfiguration: ArtiflowConfiguration = {
 	baseUrl: DEFAULT_BASE_URL,
+	telemetryEnabled: true,
 };
 
 export class InvalidBaseUrl extends Data.TaggedError("InvalidBaseUrl")<{
@@ -70,7 +72,15 @@ export const resolveConfigPath = (
 		});
 	});
 
-const readFileBaseUrl = (path: string) =>
+type ArtiflowFileConfiguration = {
+	readonly baseUrl?: string;
+	readonly telemetryEnabled?: boolean;
+};
+
+const readConfigFile = (
+	path: string,
+	readBaseUrl: boolean,
+): Effect.Effect<ArtiflowFileConfiguration, ConfigError, FileSystem.FileSystem> =>
 	Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
 		const exists = yield* fs.exists(path).pipe(
@@ -83,7 +93,7 @@ const readFileBaseUrl = (path: string) =>
 					}),
 			),
 		);
-		if (!exists) return undefined;
+		if (!exists) return {};
 		const source = yield* fs.readFileString(path).pipe(
 			Effect.mapError(
 				(cause) =>
@@ -95,7 +105,11 @@ const readFileBaseUrl = (path: string) =>
 			),
 		);
 		const parsed = yield* Effect.try({
-			try: () => Toml.parse(source) as { readonly base_url?: unknown },
+			try: () =>
+				Toml.parse(source) as {
+					readonly base_url?: unknown;
+					readonly telemetry?: unknown;
+				},
 			catch: (cause) =>
 				new ConfigFileParseError({
 					cause,
@@ -103,15 +117,29 @@ const readFileBaseUrl = (path: string) =>
 					path,
 				}),
 		});
-		if (parsed.base_url === undefined) return undefined;
-		if (typeof parsed.base_url !== "string") {
+		let baseUrl: string | undefined;
+		if (readBaseUrl && parsed.base_url !== undefined) {
+			if (typeof parsed.base_url !== "string") {
+				return yield* new ConfigFileParseError({
+					cause: parsed.base_url,
+					message: "base_url must be a string.",
+					path,
+				});
+			}
+			baseUrl = yield* parseBaseUrlEnv(parsed.base_url);
+		}
+		if (parsed.telemetry !== undefined && typeof parsed.telemetry !== "boolean") {
 			return yield* new ConfigFileParseError({
-				cause: parsed.base_url,
-				message: "base_url must be a string.",
+				cause: parsed.telemetry,
+				message: "telemetry must be a boolean.",
 				path,
 			});
 		}
-		return yield* parseBaseUrlEnv(parsed.base_url);
+
+		return {
+			baseUrl,
+			telemetryEnabled: parsed.telemetry,
+		};
 	});
 
 export const loadArtiflowConfigFromEnvironment = (
@@ -119,10 +147,12 @@ export const loadArtiflowConfigFromEnvironment = (
 ): Effect.Effect<ArtiflowConfiguration, ConfigError, FileSystem.FileSystem> =>
 	Effect.gen(function* () {
 		const override = yield* parseBaseUrlEnv(env[BASE_URL_ENV]);
-		if (override !== undefined) return { baseUrl: override };
 		const path = yield* resolveConfigPath(env);
-		const fileBaseUrl = yield* readFileBaseUrl(path.path);
-		return { baseUrl: fileBaseUrl ?? DEFAULT_BASE_URL };
+		const fileConfig = yield* readConfigFile(path.path, override === undefined);
+		return {
+			baseUrl: override ?? fileConfig.baseUrl ?? defaultArtiflowConfiguration.baseUrl,
+			telemetryEnabled: fileConfig.telemetryEnabled ?? defaultArtiflowConfiguration.telemetryEnabled,
+		};
 	});
 
 export const loadArtiflowConfig = loadArtiflowConfigFromEnvironment(process.env);

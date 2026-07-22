@@ -21,21 +21,24 @@ describe("Artiflow CLI configuration", () => {
 	it.effect("loads the built-in base URL when the config file is missing", () =>
 		Effect.gen(function* () {
 			const config = yield* loadArtiflowConfigFromEnvironment({});
-			assert.deepStrictEqual(config, { baseUrl: DEFAULT_BASE_URL });
+			assert.deepStrictEqual(config, { baseUrl: DEFAULT_BASE_URL, telemetryEnabled: true });
 		}).pipe(Effect.provide(fileSystemLayer({}))),
 	);
 
-	it.effect("loads the sole persisted base_url setting", () =>
+	it.effect("loads persisted base_url and telemetry settings", () =>
 		Effect.gen(function* () {
 			const path = "/tmp/artiflow-config-test.toml";
 			const config = yield* loadArtiflowConfigFromEnvironment({
 				[CONFIG_PATH_ENV]: path,
 			});
-			assert.deepStrictEqual(config, { baseUrl: "https://artiflow.test" });
+			assert.deepStrictEqual(config, {
+				baseUrl: "https://artiflow.test",
+				telemetryEnabled: false,
+			});
 		}).pipe(
 			Effect.provide(
 				fileSystemLayer({
-					"/tmp/artiflow-config-test.toml": 'base_url = "https://artiflow.test/"',
+					"/tmp/artiflow-config-test.toml": 'base_url = "https://artiflow.test/"\ntelemetry = false',
 				}),
 			),
 		),
@@ -49,7 +52,14 @@ describe("Artiflow CLI configuration", () => {
 				[CONFIG_PATH_ENV]: "/tmp/artiflow-config-test.toml",
 			});
 			assert.strictEqual(config.baseUrl, "http://127.0.0.1:4000");
-		}).pipe(Effect.provide(fileSystemLayer({}))),
+			assert.isFalse(config.telemetryEnabled);
+		}).pipe(
+			Effect.provide(
+				fileSystemLayer({
+					"/tmp/artiflow-config-test.toml": 'base_url = "not-a-url"\ntelemetry = false',
+				}),
+			),
+		),
 	);
 
 	it.effect("rejects invalid URLs and empty config paths", () =>
@@ -61,10 +71,32 @@ describe("Artiflow CLI configuration", () => {
 		}),
 	);
 
+	it.effect("rejects a non-boolean telemetry setting", () =>
+		Effect.gen(function* () {
+			const path = "/tmp/artiflow-config-test.toml";
+			const error = yield* Effect.flip(
+				loadArtiflowConfigFromEnvironment({
+					[CONFIG_PATH_ENV]: path,
+				}),
+			);
+			assert.strictEqual(error._tag, "ConfigFileParseError");
+			if (error._tag === "ConfigFileParseError") {
+				assert.strictEqual(error.message, "telemetry must be a boolean.");
+			}
+		}).pipe(
+			Effect.provide(
+				fileSystemLayer({
+					"/tmp/artiflow-config-test.toml": 'telemetry = "disabled"',
+				}),
+			),
+		),
+	);
+
 	it.effect("provides the resolved service through an Effect layer", () =>
 		Effect.gen(function* () {
 			const config = yield* ArtiflowConfig;
 			assert.strictEqual(config.baseUrl, DEFAULT_BASE_URL);
+			assert.isTrue(config.telemetryEnabled);
 		}).pipe(Effect.provide(ArtiflowConfig.layerFromEnvironment({})), Effect.provide(fileSystemLayer({}))),
 	);
 });
