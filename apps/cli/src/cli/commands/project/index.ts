@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { Argument, Command, Flag } from "effect/unstable/cli";
 
 import { ArtiflowApiClient, withTransientRetry } from "../../../api-client.js";
+import { requireCredential } from "../../../auth/require-credential.js";
 import { findProjectManifest, removeProjectManifest, writeProjectManifest } from "../../../project-manifest.js";
 import { confirmDestructiveAction } from "../../confirm.js";
 import { printResult } from "../../output.js";
@@ -16,6 +17,7 @@ const createCommand = Command.make(
 	},
 	({ json, name }) =>
 		Effect.gen(function* () {
+			yield* requireCredential;
 			const client = yield* ArtiflowApiClient;
 			const project = yield* withTransientRetry(
 				client.projects.create({
@@ -39,6 +41,7 @@ const linkCommand = Command.make(
 	},
 	({ json, projectId }) =>
 		Effect.gen(function* () {
+			yield* requireCredential;
 			const client = yield* ArtiflowApiClient;
 			const project = yield* client.projects.get({ params: { projectId } });
 			const manifest = yield* writeProjectManifest(project.id);
@@ -52,6 +55,7 @@ const linkCommand = Command.make(
 
 const showCommand = Command.make("show", { json: jsonFlag }, ({ json }) =>
 	Effect.gen(function* () {
+		yield* requireCredential;
 		const manifest = yield* findProjectManifest();
 		const client = yield* ArtiflowApiClient;
 		const project = yield* client.projects.get({ params: { projectId: manifest.projectId } });
@@ -71,6 +75,7 @@ const renameCommand = Command.make(
 	},
 	({ json, name }) =>
 		Effect.gen(function* () {
+			yield* requireCredential;
 			const manifest = yield* findProjectManifest();
 			const client = yield* ArtiflowApiClient;
 			const project = yield* client.projects.rename({
@@ -100,6 +105,7 @@ const deleteCommand = Command.make(
 	},
 	({ force, json }) =>
 		Effect.gen(function* () {
+			yield* requireCredential;
 			const manifest = yield* findProjectManifest();
 			yield* confirmDestructiveAction(manifest.projectId, force, json);
 			const client = yield* ArtiflowApiClient;

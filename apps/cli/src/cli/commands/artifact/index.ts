@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { Argument, Command, Flag } from "effect/unstable/cli";
 
 import { ArtiflowApiClient } from "../../../api-client.js";
+import { requireCredential } from "../../../auth/require-credential.js";
 import { findProjectManifest } from "../../../project-manifest.js";
 import { ArtifactProjectMismatch } from "../../../runtime/command-errors.js";
 import { confirmDestructiveAction } from "../../confirm.js";
@@ -11,6 +12,7 @@ const jsonFlag = Flag.boolean("json").pipe(Flag.withDescription("Print one JSON 
 
 const listCommand = Command.make("list", { json: jsonFlag }, ({ json }) =>
 	Effect.gen(function* () {
+		yield* requireCredential;
 		const manifest = yield* findProjectManifest();
 		const client = yield* ArtiflowApiClient;
 		const artifacts = yield* client.projects.listArtifacts({
@@ -36,6 +38,7 @@ const showCommand = Command.make(
 	},
 	({ artifactId, json }) =>
 		Effect.gen(function* () {
+			yield* requireCredential;
 			const manifest = yield* findProjectManifest();
 			const client = yield* ArtiflowApiClient;
 			const artifact = yield* client.artifacts.get({ params: { artifactId } });
@@ -59,6 +62,7 @@ const deleteCommand = Command.make(
 	},
 	({ artifactId, force, json }) =>
 		Effect.gen(function* () {
+			yield* requireCredential;
 			const manifest = yield* findProjectManifest();
 			const client = yield* ArtiflowApiClient;
 			const artifact = yield* client.artifacts.get({ params: { artifactId } });

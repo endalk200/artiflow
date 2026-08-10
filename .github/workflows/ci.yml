@@ -18,14 +18,29 @@ jobs:
   quality:
     name: Quality Gate
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: artiflow
+          POSTGRES_PASSWORD: artiflow
+          POSTGRES_USER: artiflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U artiflow -d artiflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
-      AUTH_EMAIL_FROM: Artiflow CI <ci@example.com>
       BETTER_AUTH_SECRET: ci-secret-that-is-at-least-thirty-two-characters
       BETTER_AUTH_URL: http://localhost:3000
       DATABASE_URL: postgresql://artiflow:artiflow@localhost:5432/artiflow
+      DATABASE_TEST_URL: postgresql://artiflow:artiflow@localhost:5432/artiflow
+      GITHUB_CLIENT_ID: github-ci-client-id
+      GITHUB_CLIENT_SECRET: github-ci-client-secret
       NEXT_PUBLIC_APP_URL: http://localhost:3000
-      RESEND_API_KEY: re_ci
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -50,5 +65,20 @@ jobs:
       - name: Test
         run: bun run test
 
+      - name: Migrate test database
+        run: bun run db:migrate
+
+      - name: Integration test
+        run: bun run test:integration
+
       - name: Build
         run: bun run build
+
+      - name: Install browser
+        run: bunx playwright install --with-deps chromium
+
+      - name: End-to-end test
+        run: bun run test:e2e
+        env:
+          BETTER_AUTH_URL: http://127.0.0.1:3100
+          NEXT_PUBLIC_APP_URL: http://127.0.0.1:3100

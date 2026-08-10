@@ -4,7 +4,11 @@ import {
 } from "@app/api-contract/api";
 import { InvalidRequest } from "@app/api-contract/models";
 import { Context, Effect, Layer } from "effect";
-import { HttpRouter, HttpServer } from "effect/unstable/http";
+import {
+	HttpRouter,
+	HttpServer,
+	HttpServerRequest,
+} from "effect/unstable/http";
 import { HttpApiBuilder, HttpApiMiddleware } from "effect/unstable/httpapi";
 
 import { ArtifactService } from "../artiflow/artifact-service";
@@ -12,20 +16,49 @@ import type { ArtiflowRepository } from "../artiflow/repository";
 import { ProjectService } from "../artiflow/project-service";
 import { activeTraceContext, effectTelemetryLayer } from "../telemetry/effect";
 
+const OWNER_USER_ID_HEADER = "x-artiflow-owner-user-id";
+
+const ownerUserId = HttpServerRequest.HttpServerRequest.pipe(
+	Effect.map((request) => request.headers[OWNER_USER_ID_HEADER]),
+	Effect.flatMap((value) =>
+		value === undefined
+			? Effect.die("Authenticated owner context is missing.")
+			: Effect.succeed(value),
+	),
+);
+
 const ProjectsLive = HttpApiBuilder.group(ArtiflowApi, "projects", (handlers) =>
 	Effect.gen(function* () {
 		const projects = yield* ProjectService;
 		const artifacts = yield* ArtifactService;
 		return handlers
-			.handle("create", ({ payload }) => projects.create(payload))
-			.handle("get", ({ params }) => projects.get(params.projectId))
-			.handle("rename", ({ params, payload }) =>
-				projects.rename(params.projectId, payload.name),
+			.handle("create", ({ payload }) =>
+				Effect.flatMap(ownerUserId, (owner) => projects.create(owner, payload)),
 			)
-			.handle("delete", ({ params }) => projects.delete(params.projectId))
-			.handle("listArtifacts", ({ params }) => artifacts.list(params.projectId))
+			.handle("get", ({ params }) =>
+				Effect.flatMap(ownerUserId, (owner) =>
+					projects.get(owner, params.projectId),
+				),
+			)
+			.handle("rename", ({ params, payload }) =>
+				Effect.flatMap(ownerUserId, (owner) =>
+					projects.rename(owner, params.projectId, payload.name),
+				),
+			)
+			.handle("delete", ({ params }) =>
+				Effect.flatMap(ownerUserId, (owner) =>
+					projects.delete(owner, params.projectId),
+				),
+			)
+			.handle("listArtifacts", ({ params }) =>
+				Effect.flatMap(ownerUserId, (owner) =>
+					artifacts.list(owner, params.projectId),
+				),
+			)
 			.handle("createArtifact", ({ params, payload }) =>
-				artifacts.create(params.projectId, payload),
+				Effect.flatMap(ownerUserId, (owner) =>
+					artifacts.create(owner, params.projectId, payload),
+				),
 			);
 	}),
 );
@@ -37,10 +70,20 @@ const ArtifactsLive = HttpApiBuilder.group(
 		Effect.gen(function* () {
 			const artifacts = yield* ArtifactService;
 			return handlers
-				.handle("get", ({ params }) => artifacts.get(params.artifactId))
-				.handle("delete", ({ params }) => artifacts.delete(params.artifactId))
+				.handle("get", ({ params }) =>
+					Effect.flatMap(ownerUserId, (owner) =>
+						artifacts.get(owner, params.artifactId),
+					),
+				)
+				.handle("delete", ({ params }) =>
+					Effect.flatMap(ownerUserId, (owner) =>
+						artifacts.delete(owner, params.artifactId),
+					),
+				)
 				.handle("appendRevision", ({ params, payload }) =>
-					artifacts.appendRevision(params.artifactId, payload),
+					Effect.flatMap(ownerUserId, (owner) =>
+						artifacts.appendRevision(owner, params.artifactId, payload),
+					),
 				);
 		}),
 );
@@ -150,7 +193,14 @@ export const makeApiHandler = <E>(
 
 	return {
 		dispose: () => webHandler.dispose(),
-		handler: (request: Request, requestContext?: Context.Context<never>) => {
+		handler: (
+			request: Request,
+			owner: string,
+			requestContext?: Context.Context<never>,
+		) => {
+			const headers = new Headers(request.headers);
+			headers.set(OWNER_USER_ID_HEADER, owner);
+			const authenticatedRequest = new Request(request, { headers });
 			const parentContext = activeTraceContext();
 			const effectContext =
 				parentContext === undefined
@@ -159,7 +209,7 @@ export const makeApiHandler = <E>(
 						? parentContext
 						: Context.merge(requestContext, parentContext);
 			return webHandler.handler(
-				request,
+				authenticatedRequest,
 				effectContext as Context.Context<never> | undefined,
 			);
 		},

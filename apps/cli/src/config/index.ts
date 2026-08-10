@@ -47,10 +47,25 @@ export type ConfigPathResolution = {
 
 const normalizeUrl = (url: URL): string => url.toString().replace(/\/$/, "");
 
+const LOOPBACK_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
 export const parseBaseUrlEnv = (value: string | undefined): Effect.Effect<string | undefined, InvalidBaseUrl> => {
 	if (value === undefined) return Effect.succeed(undefined);
 	return Effect.try({
-		try: () => normalizeUrl(new URL(value)),
+		try: () => {
+			const url = new URL(value);
+			if (
+				(url.protocol !== "https:" && url.protocol !== "http:") ||
+				(url.protocol === "http:" && !LOOPBACK_HOSTNAMES.has(url.hostname)) ||
+				url.username !== "" ||
+				url.password !== "" ||
+				url.search !== "" ||
+				url.hash !== ""
+			) {
+				throw new Error("Unsafe Artiflow base URL");
+			}
+			return normalizeUrl(url);
+		},
 		catch: () => new InvalidBaseUrl({ value }),
 	});
 };
@@ -170,7 +185,7 @@ export const formatConfigError = (error: ConfigError): string => {
 		case "ConfigFileReadError":
 			return `Could not read Artiflow config at ${error.path}: ${error.message}`;
 		case "InvalidBaseUrl":
-			return `Invalid ${BASE_URL_ENV} or base_url value "${error.value}". Expected an absolute URL.`;
+			return `Invalid ${BASE_URL_ENV} or base_url value "${error.value}". Expected HTTPS, or HTTP on a loopback host.`;
 		case "InvalidConfigPath":
 			return `Invalid ${CONFIG_PATH_ENV} value "${error.value}". Expected a non-empty path.`;
 	}

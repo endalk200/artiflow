@@ -17,6 +17,7 @@ describe("Artiflow HTTP API", () => {
 					headers: { "content-type": "application/json" },
 					method: "POST",
 				}),
+				"usr_http",
 				Context.empty(),
 			);
 			assert.strictEqual(projectResponse.status, 201);
@@ -31,6 +32,7 @@ describe("Artiflow HTTP API", () => {
 					headers: { "content-type": "application/json" },
 					method: "POST",
 				}),
+				"usr_http",
 				Context.empty(),
 			);
 			assert.strictEqual(unsupportedResponse.status, 422);
@@ -48,6 +50,7 @@ describe("Artiflow HTTP API", () => {
 					headers: { "content-type": "application/json" },
 					method: "POST",
 				}),
+				"usr_http",
 				Context.empty(),
 			);
 			const publicationBody = await publicationResponse.text();
@@ -61,6 +64,7 @@ describe("Artiflow HTTP API", () => {
 
 			const artifactResponse = await app.handler(
 				new Request(`http://localhost/api/artifacts/${publication.artifactId}`),
+				"usr_http",
 				Context.empty(),
 			);
 			assert.strictEqual(artifactResponse.status, 200);
@@ -85,6 +89,7 @@ describe("Artiflow HTTP API", () => {
 					headers: { "content-type": "application/json" },
 					method: "POST",
 				}),
+				"usr_http",
 				Context.empty(),
 			);
 			assert.strictEqual(response.status, 422);
@@ -107,6 +112,7 @@ describe("Artiflow HTTP API", () => {
 						headers: { "content-type": "application/json" },
 						method: "POST",
 					}),
+					"usr_http",
 					Context.empty(),
 				);
 
@@ -153,7 +159,7 @@ describe("Artiflow HTTP API", () => {
 		try {
 			let initializationFailure: unknown;
 			try {
-				await app.handler(request(), Context.empty());
+				await app.handler(request(), "usr_http", Context.empty());
 			} catch (cause) {
 				initializationFailure = cause;
 			}
@@ -164,7 +170,11 @@ describe("Artiflow HTTP API", () => {
 				"Database connection timed out",
 			);
 
-			const response = await app.handler(request(), Context.empty());
+			const response = await app.handler(
+				request(),
+				"usr_http",
+				Context.empty(),
+			);
 
 			assert.strictEqual(response.status, 201);
 			assert.strictEqual(initializationAttempts, 2);

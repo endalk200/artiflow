@@ -9,6 +9,15 @@ import type {
 	ProjectNotFound,
 	UnsupportedSourceFormat,
 } from "@app/api-contract/models";
+import type {
+	CredentialStoreError,
+	DeviceAuthorizationDenied,
+	DeviceAuthorizationExpired,
+	DeviceAuthorizationInvalid,
+	DeviceAuthorizationNetworkError,
+	DeviceAuthorizationProtocolError,
+	MissingCredential,
+} from "../auth/errors.js";
 import { Console, Data, Effect, Runtime } from "effect";
 import type { HttpClientError } from "effect/unstable/http/HttpClientError";
 
@@ -22,6 +31,7 @@ import type {
 import type { ArtifactProjectMismatch, DestructiveConfirmationRequired, SourceFileError } from "./command-errors.js";
 
 export const CLI_EXIT_CODES = {
+	authentication: 7,
 	conflict: 4,
 	invalidInput: 2,
 	invalidSource: 5,
@@ -58,6 +68,30 @@ export const handleCliFailure = {
 		printAndFail(error, formatConfigError(error), CLI_EXIT_CODES.invalidInput),
 	ConfigFileReadError: (error: Parameters<typeof formatConfigError>[0]) =>
 		printAndFail(error, formatConfigError(error), CLI_EXIT_CODES.invalidInput),
+	CredentialStoreError: (error: CredentialStoreError) =>
+		printAndFail(
+			error,
+			`Could not access Artiflow credentials at ${error.path}: ${error.message}`,
+			CLI_EXIT_CODES.unavailable,
+		),
+	DeviceAuthorizationDenied: (error: DeviceAuthorizationDenied) =>
+		printAndFail(error, "Device authorization was denied.", CLI_EXIT_CODES.authentication),
+	DeviceAuthorizationExpired: (error: DeviceAuthorizationExpired) =>
+		printAndFail(
+			error,
+			'Device authorization expired. Run "artiflow auth login" again.',
+			CLI_EXIT_CODES.authentication,
+		),
+	DeviceAuthorizationInvalid: (error: DeviceAuthorizationInvalid) =>
+		printAndFail(
+			error,
+			'Device authorization is no longer valid. Run "artiflow auth login" again.',
+			CLI_EXIT_CODES.authentication,
+		),
+	DeviceAuthorizationNetworkError: (error: DeviceAuthorizationNetworkError) =>
+		printAndFail(error, error.message, CLI_EXIT_CODES.unavailable),
+	DeviceAuthorizationProtocolError: (error: DeviceAuthorizationProtocolError) =>
+		printAndFail(error, error.message, CLI_EXIT_CODES.unavailable),
 	DestructiveConfirmationRequired: (error: DestructiveConfirmationRequired) =>
 		printAndFail(
 			error,
@@ -65,7 +99,13 @@ export const handleCliFailure = {
 			CLI_EXIT_CODES.invalidInput,
 		),
 	HttpClientError: (error: HttpClientError) =>
-		printAndFail(error, `Artiflow request failed: ${error.message}`, CLI_EXIT_CODES.unavailable),
+		error.response?.status === 401
+			? printAndFail(
+					error,
+					'Your Artiflow session is no longer valid. Run "artiflow auth login" again.',
+					CLI_EXIT_CODES.authentication,
+				)
+			: printAndFail(error, `Artiflow request failed: ${error.message}`, CLI_EXIT_CODES.unavailable),
 	IdempotencyConflict: (error: IdempotencyConflict) =>
 		printAndFail(
 			error,
@@ -89,6 +129,12 @@ export const handleCliFailure = {
 		printAndFail(error, `Invalid Project manifest at ${error.path}: ${error.message}`, CLI_EXIT_CODES.invalidInput),
 	InvalidProjectName: (error: InvalidProjectName) => printAndFail(error, error.message, CLI_EXIT_CODES.invalidInput),
 	InvalidRequest: (error: InvalidRequest) => printAndFail(error, error.message, CLI_EXIT_CODES.invalidInput),
+	MissingCredential: (error: MissingCredential) =>
+		printAndFail(
+			error,
+			`Not authenticated with ${error.baseUrl}. Run "artiflow auth login".`,
+			CLI_EXIT_CODES.authentication,
+		),
 	ProjectManifestFileError: (error: ProjectManifestFileError) =>
 		printAndFail(
 			error,

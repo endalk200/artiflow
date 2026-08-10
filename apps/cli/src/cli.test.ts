@@ -1,9 +1,12 @@
 import { createRequire } from "node:module";
 import { ArtiflowApiClient, type ArtiflowApiClientShape } from "./api-client.js";
+import { BrowserOpener } from "./auth/browser-opener.js";
+import { CredentialStore } from "./auth/credential-store.js";
+import { DeviceAuthorizationClient } from "./auth/device-authorization-client.js";
 import { InvalidRequest } from "@app/api-contract/models";
 import { assert, describe, it } from "@effect/vitest";
-import { CONFIG_PATH_ENV, BASE_URL_ENV, InvalidConfigPath } from "./config/index.js";
-import { Effect, FileSystem, Layer, Path, Runtime, Stdio, Terminal } from "effect";
+import { ArtiflowConfig, CONFIG_PATH_ENV, BASE_URL_ENV, InvalidConfigPath } from "./config/index.js";
+import { Effect, FileSystem, Layer, Option, Path, Redacted, Runtime, Stdio, Terminal } from "effect";
 import { TestConsole } from "effect/testing";
 import { CliOutput } from "effect/unstable/cli";
 import { ChildProcessSpawner } from "effect/unstable/process";
@@ -33,6 +36,7 @@ const SpawnerLayer = Layer.succeed(
 const cliTestLayer = (
 	files: Record<string, string> = {},
 	client: ArtiflowApiClientShape = {} as ArtiflowApiClientShape,
+	authenticated = true,
 ) =>
 	Layer.mergeAll(
 		TestConsole.layer,
@@ -52,6 +56,28 @@ const cliTestLayer = (
 		Stdio.layerTest({}),
 		withoutConsoleLogger,
 		Layer.succeed(ArtiflowApiClient, client),
+		Layer.succeed(ArtiflowConfig, {
+			baseUrl: "http://localhost:3000",
+			telemetryEnabled: false,
+		}),
+		Layer.succeed(BrowserOpener, { open: () => Effect.succeed(true) }),
+		Layer.succeed(CredentialStore, {
+			get: () =>
+				Effect.succeed(
+					authenticated
+						? Option.some({
+								accessToken: Redacted.make("test-token"),
+								expiresAt: "2999-01-01T00:00:00.000Z",
+							})
+						: Option.none(),
+				),
+			remove: () => Effect.void,
+			set: () => Effect.void,
+		}),
+		Layer.succeed(DeviceAuthorizationClient, {
+			pollToken: () => Effect.die("pollToken is not implemented in CLI tests"),
+			requestCode: () => Effect.die("requestCode is not implemented in CLI tests"),
+		}),
 	);
 
 const artiflowEnvKeys = [BASE_URL_ENV, CONFIG_PATH_ENV] as const;
@@ -94,7 +120,12 @@ const runArtiflowCommand = (
 	args: ReadonlyArray<string>,
 	files: Record<string, string> = {},
 	client: ArtiflowApiClientShape = {} as ArtiflowApiClientShape,
-) => captureArtiflowCommand(args).pipe(withIsolatedArtiflowEnvironment, Effect.provide(cliTestLayer(files, client)));
+	authenticated = true,
+) =>
+	captureArtiflowCommand(args).pipe(
+		withIsolatedArtiflowEnvironment,
+		Effect.provide(cliTestLayer(files, client, authenticated)),
+	);
 
 describe("artiflow CLI", () => {
 	it("reduces telemetry command names to the bounded command catalog", () => {
@@ -130,10 +161,55 @@ describe("artiflow CLI", () => {
 			assert.include(stdoutText, "artiflow <subcommand> [flags]");
 			assert.include(stdoutText, "Publish agent-authored visual documents");
 			assert.include(stdoutText, "project");
+			assert.include(stdoutText, "auth");
 			assert.include(stdoutText, "publish");
 			assert.include(stdoutText, "artifact");
 			assert.notInclude(stdoutText, "skill");
 			assert.include(stdoutText, "version");
+		}),
+	);
+
+	it.effect("fails unauthenticated remote commands before calling the API", () =>
+		Effect.gen(function* () {
+			let apiCalls = 0;
+			const client = {
+				projects: {
+					create: () =>
+						Effect.sync(() => {
+							apiCalls += 1;
+							return {};
+						}),
+				},
+			} as unknown as ArtiflowApiClientShape;
+			const error = yield* Effect.flip(runArtiflowCommand(["project", "create", "Needs auth"], {}, client, false));
+
+			assert.strictEqual(error._tag, "MissingCredential");
+			assert.strictEqual(apiCalls, 0);
+		}),
+	);
+
+	it.effect("reports authentication status without exposing the credential", () =>
+		Effect.gen(function* () {
+			const { stdout } = yield* runArtiflowCommand(["auth", "status", "--json"]);
+			const status = JSON.parse(String(stdout[0] ?? ""));
+
+			assert.deepStrictEqual(status, {
+				authenticated: true,
+				baseUrl: "http://localhost:3000",
+				expiresAt: "2999-01-01T00:00:00.000Z",
+			});
+			assert.notInclude(JSON.stringify(status), "test-token");
+		}),
+	);
+
+	it.effect("prints a logout result for the configured base URL", () =>
+		Effect.gen(function* () {
+			const { stdout } = yield* runArtiflowCommand(["auth", "logout", "--json"]);
+
+			assert.deepStrictEqual(JSON.parse(String(stdout[0] ?? "")), {
+				authenticated: false,
+				baseUrl: "http://localhost:3000",
+			});
 		}),
 	);
 

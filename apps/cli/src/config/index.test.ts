@@ -64,10 +64,26 @@ describe("Artiflow CLI configuration", () => {
 
 	it.effect("rejects invalid URLs and empty config paths", () =>
 		Effect.gen(function* () {
-			const invalidUrl = yield* Effect.flip(parseBaseUrlEnv("not-a-url"));
-			assert.strictEqual(invalidUrl._tag, "InvalidBaseUrl");
+			for (const value of [
+				"not-a-url",
+				"http://artiflow.example",
+				"ftp://artiflow.example",
+				"https://user:password@artiflow.example",
+				"https://artiflow.example?token=unsafe",
+			]) {
+				const invalidUrl = yield* Effect.flip(parseBaseUrlEnv(value));
+				assert.strictEqual(invalidUrl._tag, "InvalidBaseUrl");
+			}
 			const invalidPath = yield* Effect.flip(resolveConfigPath({ [CONFIG_PATH_ENV]: "   " }));
 			assert.strictEqual(invalidPath._tag, "InvalidConfigPath");
+		}),
+	);
+
+	it.effect("allows HTTPS and loopback HTTP base URLs", () =>
+		Effect.gen(function* () {
+			assert.strictEqual(yield* parseBaseUrlEnv("https://artiflow.example/"), "https://artiflow.example");
+			assert.strictEqual(yield* parseBaseUrlEnv("http://localhost:3000/"), "http://localhost:3000");
+			assert.strictEqual(yield* parseBaseUrlEnv("http://[::1]:3000/"), "http://[::1]:3000");
 		}),
 	);
 

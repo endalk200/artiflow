@@ -16,11 +16,14 @@ const loadArtifactPage = cache(
 			Effect.gen(function* () {
 				const artifacts = yield* ArtifactService;
 				const projects = yield* ProjectService;
-				const artifact = yield* artifacts.get(artifactId);
+				const artifact = yield* artifacts.getPublic(artifactId);
 				return {
 					artifact,
-					project: yield* projects.get(artifact.projectId),
-					revision: yield* artifacts.getRevision(artifactId, revisionNumber),
+					project: yield* projects.getPublic(artifact.projectId),
+					revision: yield* artifacts.getPublicRevision(
+						artifactId,
+						revisionNumber,
+					),
 				};
 			}).pipe(
 				Effect.map((value) => value as typeof value | null),
