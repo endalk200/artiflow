@@ -8,7 +8,7 @@
         "@biomejs/biome": "^2.5.5",
         "@changesets/cli": "^2.31.1",
         "esbuild": "0.28.1",
-        "js-yaml": "5.2.1",
+        "js-yaml": "5.2.3",
         "turbo": "^2.9.14",
         "typescript": "^6.0.3",
         "undici": "8.8.0",
@@ -16,7 +16,7 @@
     },
     "apps/cli": {
       "name": "artiflow",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "bin": {
         "artiflow": "dist/bin.js",
       },
@@ -1533,7 +1533,7 @@
 
     "js-tokens": ["js-tokens@10.0.0", "", {}, "sha512-lM/UBzQmfJRo9ABXbPWemivdCW8V2G8FHaHdypQaIy523snUjog0W71ayWXTjiR+ixeMyVHN2XcpnTd/liPg/Q=="],
 
-    "js-yaml": ["js-yaml@5.2.1", "", { "dependencies": { "argparse": "^2.0.1" }, "bin": { "js-yaml": "bin/js-yaml.mjs" } }, "sha512-zfLtNfQqxVqq3uaTqSkh4x4hZw3KHobGUA0fJUj4wawW8bsQLTVqpHdXSIzidh7o+4lEW36tANuAGdaFx6Zgnw=="],
+    "js-yaml": ["js-yaml@5.2.3", "", { "dependencies": { "argparse": "^2.0.1" }, "bin": { "js-yaml": "bin/js-yaml.mjs" } }, "sha512-n+mUVyUX5bVv7G/G2zyIHOhdxfuU1dY2NOFzTQUWiMUbFss8b57NFlgCCaggU78wSw5KVS9cllzeLyzyR+n5nw=="],
 
     "jsbi": ["jsbi@4.3.2", "", {}, "sha512-9fqMSQbhJykSeii05nxKl4m6Eqn2P6rOlYiS+C5Dr/HPIU/7yZxu5qzbs40tgaFORiw2Amd0mirjxatXYMkIew=="],
 
