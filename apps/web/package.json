@@ -84,6 +84,7 @@
 		"test:e2e:ui": "playwright test --ui",
 		"e2e:server": "bun run e2e/server.ts",
 		"playwright:install": "playwright install chromium",
+		"playwright:install:ci": "playwright install --with-deps chromium",
 		"storybook": "storybook dev -p 6006",
 		"build-storybook": "storybook build",
 		"db:generate": "drizzle-kit generate --config drizzle.config.ts",
