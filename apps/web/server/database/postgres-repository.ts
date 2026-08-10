@@ -49,6 +49,9 @@ const asStoredRevision = (
 	row: typeof revisionsTable.$inferSelect,
 ): StoredRevision => Object.assign(asRevision(row), { source: row.source });
 
+const scopedIdempotencyKey = (ownerUserId: string, idempotencyKey: string) =>
+	JSON.stringify([ownerUserId, idempotencyKey]);
+
 export const postgresRepositoryLayer = (databaseUrl: string) => {
 	const PgLive = PgClient.layer({ url: Redacted.make(databaseUrl) });
 	const RepositoryLive = Layer.effect(
@@ -56,14 +59,30 @@ export const postgresRepositoryLayer = (databaseUrl: string) => {
 		Effect.gen(function* () {
 			const db = yield* PgDrizzle.makeWithDefaults();
 
-			const readArtifact = (artifactId: string) =>
+			const readArtifact = (artifactId: string, ownerUserId?: string) =>
 				Effect.gen(function* () {
-					const records = yield* db
-						.select()
-						.from(artifactsTable)
-						.where(eq(artifactsTable.id, artifactId))
-						.limit(1);
-					const record = records[0];
+					const records =
+						ownerUserId === undefined
+							? yield* db
+									.select({ artifact: artifactsTable })
+									.from(artifactsTable)
+									.where(eq(artifactsTable.id, artifactId))
+									.limit(1)
+							: yield* db
+									.select({ artifact: artifactsTable })
+									.from(artifactsTable)
+									.innerJoin(
+										projectsTable,
+										eq(projectsTable.id, artifactsTable.projectId),
+									)
+									.where(
+										and(
+											eq(artifactsTable.id, artifactId),
+											eq(projectsTable.ownerUserId, ownerUserId),
+										),
+									)
+									.limit(1);
+					const record = records[0]?.artifact;
 					if (record === undefined) return Option.none<Artifact>();
 					const history = yield* db
 						.select()
@@ -95,35 +114,80 @@ export const postgresRepositoryLayer = (databaseUrl: string) => {
 					);
 				});
 
+			const readRevision = (
+				artifactId: string,
+				revisionNumber?: number,
+				ownerUserId?: string,
+			) =>
+				Effect.gen(function* () {
+					const artifact = yield* readArtifact(artifactId, ownerUserId);
+					if (Option.isNone(artifact)) return Option.none<StoredRevision>();
+					const targetRevisionNumber =
+						revisionNumber ??
+						artifact.value.revisions.find(
+							(revision) => revision.id === artifact.value.currentRevisionId,
+						)?.number;
+					if (targetRevisionNumber === undefined)
+						return Option.none<StoredRevision>();
+					const rows = yield* db
+						.select()
+						.from(revisionsTable)
+						.where(
+							and(
+								eq(revisionsTable.artifactId, artifactId),
+								eq(revisionsTable.number, targetRevisionNumber),
+							),
+						)
+						.limit(1);
+					return Option.fromNullishOr(rows[0]).pipe(
+						Option.map(asStoredRevision),
+					);
+				});
+
 			const repository: ArtiflowRepositoryShape = {
 				appendRevision: (input) =>
 					db
 						.transaction((tx) =>
 							Effect.gen(function* () {
-								yield* tx.execute(
-									sql`select pg_advisory_xact_lock(hashtextextended(${input.idempotencyKey}, 0))`,
+								const idempotencyKey = scopedIdempotencyKey(
+									input.ownerUserId,
+									input.idempotencyKey,
 								);
+								yield* tx.execute(
+									sql`select pg_advisory_xact_lock(hashtextextended(${idempotencyKey}, 0))`,
+								);
+								const artifactRows = yield* tx
+									.select({ artifact: artifactsTable })
+									.from(artifactsTable)
+									.innerJoin(
+										projectsTable,
+										eq(projectsTable.id, artifactsTable.projectId),
+									)
+									.where(
+										and(
+											eq(artifactsTable.id, input.artifactId),
+											eq(projectsTable.ownerUserId, input.ownerUserId),
+										),
+									)
+									.limit(1);
+								const artifact = artifactRows[0]?.artifact;
+								if (artifact === undefined)
+									return { _tag: "artifactNotFound" } as const;
 								const replayRows = yield* tx
 									.select()
 									.from(revisionsTable)
 									.where(
 										eq(
 											revisionsTable.publicationIdempotencyKey,
-											input.idempotencyKey,
+											idempotencyKey,
 										),
 									)
 									.limit(1);
 								const replay = replayRows[0];
 								if (replay !== undefined) {
-									const artifactRows = yield* tx
-										.select()
-										.from(artifactsTable)
-										.where(eq(artifactsTable.id, replay.artifactId))
-										.limit(1);
-									const artifact = artifactRows[0];
 									return replay.publicationRequestHash === input.requestHash &&
 										replay.artifactId === input.artifactId &&
-										artifact !== undefined
+										artifact.id === replay.artifactId
 										? ({
 												_tag: "replayed",
 												publication: {
@@ -138,14 +202,6 @@ export const postgresRepositoryLayer = (databaseUrl: string) => {
 											} satisfies AppendRevisionResult);
 								}
 
-								const artifactRows = yield* tx
-									.select()
-									.from(artifactsTable)
-									.where(eq(artifactsTable.id, input.artifactId))
-									.limit(1);
-								const artifact = artifactRows[0];
-								if (artifact === undefined)
-									return { _tag: "artifactNotFound" } as const;
 								const currentRows = yield* tx
 									.select({ id: revisionsTable.id })
 									.from(revisionsTable)
@@ -209,7 +265,7 @@ export const postgresRepositoryLayer = (databaseUrl: string) => {
 									description: input.description,
 									id: input.revisionId,
 									number: revisionNumber,
-									publicationIdempotencyKey: input.idempotencyKey,
+									publicationIdempotencyKey: idempotencyKey,
 									publicationRequestHash: input.requestHash,
 									source: input.source,
 									sourceFormatVersion: input.sourceFormatVersion,
@@ -231,27 +287,52 @@ export const postgresRepositoryLayer = (databaseUrl: string) => {
 					db
 						.transaction((tx) =>
 							Effect.gen(function* () {
-								yield* tx.execute(
-									sql`select pg_advisory_xact_lock(hashtextextended(${input.idempotencyKey}, 0))`,
+								const idempotencyKey = scopedIdempotencyKey(
+									input.ownerUserId,
+									input.idempotencyKey,
 								);
+								yield* tx.execute(
+									sql`select pg_advisory_xact_lock(hashtextextended(${idempotencyKey}, 0))`,
+								);
+								const project = yield* tx
+									.select({ id: projectsTable.id })
+									.from(projectsTable)
+									.where(
+										and(
+											eq(projectsTable.id, input.projectId),
+											eq(projectsTable.ownerUserId, input.ownerUserId),
+										),
+									)
+									.limit(1);
+								if (project.length === 0)
+									return { _tag: "projectNotFound" } as const;
 								const replayRows = yield* tx
 									.select()
 									.from(revisionsTable)
 									.where(
 										eq(
 											revisionsTable.publicationIdempotencyKey,
-											input.idempotencyKey,
+											idempotencyKey,
 										),
 									)
 									.limit(1);
 								const replay = replayRows[0];
 								if (replay !== undefined) {
 									const artifactRows = yield* tx
-										.select()
+										.select({ artifact: artifactsTable })
 										.from(artifactsTable)
-										.where(eq(artifactsTable.id, replay.artifactId))
+										.innerJoin(
+											projectsTable,
+											eq(projectsTable.id, artifactsTable.projectId),
+										)
+										.where(
+											and(
+												eq(artifactsTable.id, replay.artifactId),
+												eq(projectsTable.ownerUserId, input.ownerUserId),
+											),
+										)
 										.limit(1);
-									const artifact = artifactRows[0];
+									const artifact = artifactRows[0]?.artifact;
 									return replay.publicationRequestHash === input.requestHash &&
 										artifact?.projectId === input.projectId
 										? ({
@@ -265,13 +346,6 @@ export const postgresRepositoryLayer = (databaseUrl: string) => {
 											} satisfies CreateArtifactResult)
 										: ({ _tag: "conflict" } satisfies CreateArtifactResult);
 								}
-								const project = yield* tx
-									.select({ id: projectsTable.id })
-									.from(projectsTable)
-									.where(eq(projectsTable.id, input.projectId))
-									.limit(1);
-								if (project.length === 0)
-									return { _tag: "projectNotFound" } as const;
 								yield* tx.insert(artifactsTable).values({
 									createdAt: input.now,
 									currentRevisionNumber: 1,
@@ -285,7 +359,7 @@ export const postgresRepositoryLayer = (databaseUrl: string) => {
 									description: input.description,
 									id: input.revisionId,
 									number: 1,
-									publicationIdempotencyKey: input.idempotencyKey,
+									publicationIdempotencyKey: idempotencyKey,
 									publicationRequestHash: input.requestHash,
 									source: input.source,
 									sourceFormatVersion: input.sourceFormatVersion,
@@ -307,22 +381,24 @@ export const postgresRepositoryLayer = (databaseUrl: string) => {
 					db
 						.transaction((tx) =>
 							Effect.gen(function* () {
+								const idempotencyKey = scopedIdempotencyKey(
+									input.ownerUserId,
+									input.idempotencyKey,
+								);
 								yield* tx.execute(
-									sql`select pg_advisory_xact_lock(hashtextextended(${input.idempotencyKey}, 0))`,
+									sql`select pg_advisory_xact_lock(hashtextextended(${idempotencyKey}, 0))`,
 								);
 								const rows = yield* tx
 									.select()
 									.from(projectsTable)
 									.where(
-										eq(
-											projectsTable.creationIdempotencyKey,
-											input.idempotencyKey,
-										),
+										eq(projectsTable.creationIdempotencyKey, idempotencyKey),
 									)
 									.limit(1);
 								const existing = rows[0];
 								if (existing !== undefined) {
-									return existing.creationRequestHash === input.requestHash
+									return existing.ownerUserId === input.ownerUserId &&
+										existing.creationRequestHash === input.requestHash
 										? ({
 												_tag: "replayed",
 												project: asProject(existing),
@@ -333,10 +409,11 @@ export const postgresRepositoryLayer = (databaseUrl: string) => {
 									.insert(projectsTable)
 									.values({
 										createdAt: input.now,
-										creationIdempotencyKey: input.idempotencyKey,
+										creationIdempotencyKey: idempotencyKey,
 										creationRequestHash: input.requestHash,
 										id: input.id,
 										name: input.name,
+										ownerUserId: input.ownerUserId,
 										updatedAt: input.now,
 									})
 									.returning();
@@ -353,27 +430,74 @@ export const postgresRepositoryLayer = (databaseUrl: string) => {
 							}),
 						)
 						.pipe(Effect.mapError(infrastructureError)),
-				deleteArtifact: (artifactId) =>
+				deleteArtifact: (ownerUserId, artifactId) =>
 					db
-						.delete(artifactsTable)
-						.where(eq(artifactsTable.id, artifactId))
-						.returning({ id: artifactsTable.id })
-						.pipe(
-							Effect.map((rows) => rows.length > 0),
-							Effect.mapError(infrastructureError),
-						),
-				deleteProject: (projectId) =>
+						.transaction((tx) =>
+							tx
+								.select({ id: artifactsTable.id })
+								.from(artifactsTable)
+								.innerJoin(
+									projectsTable,
+									eq(projectsTable.id, artifactsTable.projectId),
+								)
+								.where(
+									and(
+										eq(artifactsTable.id, artifactId),
+										eq(projectsTable.ownerUserId, ownerUserId),
+									),
+								)
+								.limit(1)
+								.pipe(
+									Effect.flatMap((owned) =>
+										owned.length === 0
+											? Effect.succeed(false)
+											: tx
+													.delete(artifactsTable)
+													.where(eq(artifactsTable.id, artifactId))
+													.returning({ id: artifactsTable.id })
+													.pipe(Effect.map((rows) => rows.length > 0)),
+									),
+								),
+						)
+						.pipe(Effect.mapError(infrastructureError)),
+				deleteProject: (ownerUserId, projectId) =>
 					db
 						.delete(projectsTable)
-						.where(eq(projectsTable.id, projectId))
+						.where(
+							and(
+								eq(projectsTable.id, projectId),
+								eq(projectsTable.ownerUserId, ownerUserId),
+							),
+						)
 						.returning({ id: projectsTable.id })
 						.pipe(
 							Effect.map((rows) => rows.length > 0),
 							Effect.mapError(infrastructureError),
 						),
-				getArtifact: (artifactId) =>
+				getArtifact: (ownerUserId, artifactId) =>
+					readArtifact(artifactId, ownerUserId).pipe(
+						Effect.mapError(infrastructureError),
+					),
+				getPublicArtifact: (artifactId) =>
 					readArtifact(artifactId).pipe(Effect.mapError(infrastructureError)),
-				getProject: (projectId) =>
+				getProject: (ownerUserId, projectId) =>
+					db
+						.select()
+						.from(projectsTable)
+						.where(
+							and(
+								eq(projectsTable.id, projectId),
+								eq(projectsTable.ownerUserId, ownerUserId),
+							),
+						)
+						.limit(1)
+						.pipe(
+							Effect.map((rows) =>
+								Option.fromNullishOr(rows[0]).pipe(Option.map(asProject)),
+							),
+							Effect.mapError(infrastructureError),
+						),
+				getPublicProject: (projectId) =>
 					db
 						.select()
 						.from(projectsTable)
@@ -385,38 +509,25 @@ export const postgresRepositoryLayer = (databaseUrl: string) => {
 							),
 							Effect.mapError(infrastructureError),
 						),
-				getRevision: (artifactId, revisionNumber) =>
-					Effect.gen(function* () {
-						const artifactRows = yield* db
-							.select()
-							.from(artifactsTable)
-							.where(eq(artifactsTable.id, artifactId))
-							.limit(1);
-						const artifact = artifactRows[0];
-						if (artifact === undefined) return Option.none<StoredRevision>();
-						const rows = yield* db
-							.select()
-							.from(revisionsTable)
-							.where(
-								and(
-									eq(revisionsTable.artifactId, artifactId),
-									eq(
-										revisionsTable.number,
-										revisionNumber ?? artifact.currentRevisionNumber,
-									),
-								),
-							)
-							.limit(1);
-						return Option.fromNullishOr(rows[0]).pipe(
-							Option.map(asStoredRevision),
-						);
-					}).pipe(Effect.mapError(infrastructureError)),
-				listArtifacts: (projectId) =>
+				getRevision: (ownerUserId, artifactId, revisionNumber) =>
+					readRevision(artifactId, revisionNumber, ownerUserId).pipe(
+						Effect.mapError(infrastructureError),
+					),
+				getPublicRevision: (artifactId, revisionNumber) =>
+					readRevision(artifactId, revisionNumber).pipe(
+						Effect.mapError(infrastructureError),
+					),
+				listArtifacts: (ownerUserId, projectId) =>
 					Effect.gen(function* () {
 						const project = yield* db
 							.select({ id: projectsTable.id })
 							.from(projectsTable)
-							.where(eq(projectsTable.id, projectId))
+							.where(
+								and(
+									eq(projectsTable.id, projectId),
+									eq(projectsTable.ownerUserId, ownerUserId),
+								),
+							)
 							.limit(1);
 						if (project.length === 0)
 							return Option.none<ReadonlyArray<ArtifactSummary>>();
@@ -426,7 +537,7 @@ export const postgresRepositoryLayer = (databaseUrl: string) => {
 							.where(eq(artifactsTable.projectId, projectId))
 							.orderBy(desc(artifactsTable.updatedAt));
 						const summaries = yield* Effect.forEach(records, (record) =>
-							readArtifact(record.id).pipe(
+							readArtifact(record.id, ownerUserId).pipe(
 								Effect.flatMap(
 									Option.match({
 										onNone: () =>
@@ -441,11 +552,12 @@ export const postgresRepositoryLayer = (databaseUrl: string) => {
 						);
 						return Option.some(summaries);
 					}).pipe(Effect.mapError(infrastructureError)),
-				listProjects: () =>
+				listProjects: (ownerUserId) =>
 					Effect.gen(function* () {
 						const projectRows = yield* db
 							.select()
 							.from(projectsTable)
+							.where(eq(projectsTable.ownerUserId, ownerUserId))
 							.orderBy(desc(projectsTable.updatedAt));
 						const countRows = yield* db
 							.select({
@@ -462,11 +574,16 @@ export const postgresRepositoryLayer = (databaseUrl: string) => {
 							project: asProject(row),
 						}));
 					}).pipe(Effect.mapError(infrastructureError)),
-				renameProject: (projectId, name, now) =>
+				renameProject: (ownerUserId, projectId, name, now) =>
 					db
 						.update(projectsTable)
 						.set({ name, updatedAt: now })
-						.where(eq(projectsTable.id, projectId))
+						.where(
+							and(
+								eq(projectsTable.id, projectId),
+								eq(projectsTable.ownerUserId, ownerUserId),
+							),
+						)
 						.returning()
 						.pipe(
 							Effect.map((rows) =>

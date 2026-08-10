@@ -60,6 +60,7 @@ const toPublishResult = (publication: {
 
 export type ArtifactServiceShape = {
 	readonly appendRevision: (
+		ownerUserId: string,
 		artifactId: string,
 		payload: typeof AppendRevisionPayload.Type,
 	) => Effect.Effect<
@@ -72,6 +73,7 @@ export type ArtifactServiceShape = {
 		| UnsupportedSourceFormat
 	>;
 	readonly create: (
+		ownerUserId: string,
 		projectId: string,
 		payload: typeof CreateArtifactPayload.Type,
 	) => Effect.Effect<
@@ -83,12 +85,25 @@ export type ArtifactServiceShape = {
 		| UnsupportedSourceFormat
 	>;
 	readonly delete: (
+		ownerUserId: string,
 		artifactId: string,
 	) => Effect.Effect<void, ArtifactNotFound | InfrastructureError>;
 	readonly get: (
+		ownerUserId: string,
+		artifactId: string,
+	) => Effect.Effect<Artifact, ArtifactNotFound | InfrastructureError>;
+	readonly getPublic: (
 		artifactId: string,
 	) => Effect.Effect<Artifact, ArtifactNotFound | InfrastructureError>;
 	readonly getRevision: (
+		ownerUserId: string,
+		artifactId: string,
+		revisionNumber?: number,
+	) => Effect.Effect<
+		StoredRevision,
+		ArtifactNotFound | InfrastructureError | RevisionNotFound
+	>;
+	readonly getPublicRevision: (
 		artifactId: string,
 		revisionNumber?: number,
 	) => Effect.Effect<
@@ -96,6 +111,7 @@ export type ArtifactServiceShape = {
 		ArtifactNotFound | InfrastructureError | RevisionNotFound
 	>;
 	readonly list: (
+		ownerUserId: string,
 		projectId: string,
 	) => Effect.Effect<
 		ReadonlyArray<ArtifactSummary>,
@@ -113,7 +129,7 @@ export class ArtifactService extends Context.Service<
 			const repository = yield* ArtiflowRepository;
 
 			return ArtifactService.of({
-				appendRevision: (artifactId, payload) =>
+				appendRevision: (ownerUserId, artifactId, payload) =>
 					Effect.gen(function* () {
 						if (payload.sourceFormatVersion !== 1) {
 							return yield* new UnsupportedSourceFormat({
@@ -127,6 +143,7 @@ export class ArtifactService extends Context.Service<
 							expectedCurrentRevisionId: payload.expectedCurrentRevisionId,
 							idempotencyKey: payload.idempotencyKey,
 							now: new Date().toISOString(),
+							ownerUserId,
 							requestHash: publicationHash({
 								expectedCurrentRevisionId: payload.expectedCurrentRevisionId,
 								source: payload.source,
@@ -187,7 +204,7 @@ export class ArtifactService extends Context.Service<
 							},
 						}),
 					),
-				create: (projectId, payload) =>
+				create: (ownerUserId, projectId, payload) =>
 					Effect.gen(function* () {
 						if (payload.sourceFormatVersion !== 1) {
 							return yield* new UnsupportedSourceFormat({
@@ -200,6 +217,7 @@ export class ArtifactService extends Context.Service<
 							artifactId: `art_${crypto.randomUUID()}`,
 							idempotencyKey: payload.idempotencyKey,
 							now: new Date().toISOString(),
+							ownerUserId,
 							projectId,
 							requestHash: publicationHash({
 								source: payload.source,
@@ -251,8 +269,8 @@ export class ArtifactService extends Context.Service<
 							},
 						}),
 					),
-				delete: (artifactId) =>
-					repository.deleteArtifact(artifactId).pipe(
+				delete: (ownerUserId, artifactId) =>
+					repository.deleteArtifact(ownerUserId, artifactId).pipe(
 						Effect.flatMap((deleted) =>
 							deleted
 								? Effect.void
@@ -268,8 +286,8 @@ export class ArtifactService extends Context.Service<
 							attributes: { "artiflow.artifact.id": artifactId },
 						}),
 					),
-				get: (artifactId) =>
-					repository.getArtifact(artifactId).pipe(
+				get: (ownerUserId, artifactId) =>
+					repository.getArtifact(ownerUserId, artifactId).pipe(
 						Effect.flatMap(
 							Option.match({
 								onNone: () => Effect.fail(new ArtifactNotFound({ artifactId })),
@@ -280,12 +298,28 @@ export class ArtifactService extends Context.Service<
 							attributes: { "artiflow.artifact.id": artifactId },
 						}),
 					),
-				getRevision: (artifactId, revisionNumber) =>
+				getPublic: (artifactId) =>
+					repository.getPublicArtifact(artifactId).pipe(
+						Effect.flatMap(
+							Option.match({
+								onNone: () => Effect.fail(new ArtifactNotFound({ artifactId })),
+								onSome: Effect.succeed,
+							}),
+						),
+						Effect.withSpan("artiflow.artifact.get_public", {
+							attributes: { "artiflow.artifact.id": artifactId },
+						}),
+					),
+				getRevision: (ownerUserId, artifactId, revisionNumber) =>
 					Effect.gen(function* () {
-						const artifact = yield* repository.getArtifact(artifactId);
+						const artifact = yield* repository.getArtifact(
+							ownerUserId,
+							artifactId,
+						);
 						if (Option.isNone(artifact))
 							return yield* new ArtifactNotFound({ artifactId });
 						const revision = yield* repository.getRevision(
+							ownerUserId,
 							artifactId,
 							revisionNumber,
 						);
@@ -309,8 +343,37 @@ export class ArtifactService extends Context.Service<
 							},
 						}),
 					),
-				list: (projectId) =>
-					repository.listArtifacts(projectId).pipe(
+				getPublicRevision: (artifactId, revisionNumber) =>
+					Effect.gen(function* () {
+						const artifact = yield* repository.getPublicArtifact(artifactId);
+						if (Option.isNone(artifact))
+							return yield* new ArtifactNotFound({ artifactId });
+						const revision = yield* repository.getPublicRevision(
+							artifactId,
+							revisionNumber,
+						);
+						return yield* Option.match(revision, {
+							onNone: () =>
+								Effect.fail(
+									new RevisionNotFound({
+										artifactId,
+										revisionNumber: revisionNumber ?? -1,
+									}),
+								),
+							onSome: Effect.succeed,
+						});
+					}).pipe(
+						Effect.withSpan("artiflow.artifact.get_public_revision", {
+							attributes: {
+								"artiflow.artifact.id": artifactId,
+								...(revisionNumber === undefined
+									? {}
+									: { "artiflow.revision.number": revisionNumber }),
+							},
+						}),
+					),
+				list: (ownerUserId, projectId) =>
+					repository.listArtifacts(ownerUserId, projectId).pipe(
 						Effect.flatMap(
 							Option.match({
 								onNone: () => Effect.fail(new ProjectNotFound({ projectId })),

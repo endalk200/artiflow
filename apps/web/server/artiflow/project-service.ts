@@ -31,22 +31,28 @@ const requestHash = (name: string) => `project-name:${name}`;
 
 export type ProjectServiceShape = {
 	readonly create: (
+		ownerUserId: string,
 		payload: typeof CreateProjectPayload.Type,
 	) => Effect.Effect<
 		Project,
 		IdempotencyConflict | InfrastructureError | InvalidProjectName
 	>;
 	readonly delete: (
+		ownerUserId: string,
 		projectId: string,
 	) => Effect.Effect<void, InfrastructureError | ProjectNotFound>;
 	readonly get: (
+		ownerUserId: string,
 		projectId: string,
 	) => Effect.Effect<Project, InfrastructureError | ProjectNotFound>;
-	readonly list: () => Effect.Effect<
-		ReadonlyArray<ProjectListItem>,
-		InfrastructureError
-	>;
+	readonly getPublic: (
+		projectId: string,
+	) => Effect.Effect<Project, InfrastructureError | ProjectNotFound>;
+	readonly list: (
+		ownerUserId: string,
+	) => Effect.Effect<ReadonlyArray<ProjectListItem>, InfrastructureError>;
 	readonly rename: (
+		ownerUserId: string,
 		projectId: string,
 		name: string,
 	) => Effect.Effect<
@@ -65,7 +71,7 @@ export class ProjectService extends Context.Service<
 			const repository = yield* ArtiflowRepository;
 
 			return ProjectService.of({
-				create: (payload) =>
+				create: (ownerUserId, payload) =>
 					Effect.gen(function* () {
 						const name = yield* validateProjectName(payload.name);
 						const result = yield* repository.createProject({
@@ -73,6 +79,7 @@ export class ProjectService extends Context.Service<
 							idempotencyKey: payload.idempotencyKey,
 							name,
 							now: new Date().toISOString(),
+							ownerUserId,
 							requestHash: requestHash(name),
 						});
 
@@ -92,9 +99,12 @@ export class ProjectService extends Context.Service<
 						});
 						return result.project;
 					}).pipe(Effect.withSpan("artiflow.project.create")),
-				delete: (projectId) =>
+				delete: (ownerUserId, projectId) =>
 					Effect.gen(function* () {
-						const deleted = yield* repository.deleteProject(projectId);
+						const deleted = yield* repository.deleteProject(
+							ownerUserId,
+							projectId,
+						);
 						if (!deleted) return yield* new ProjectNotFound({ projectId });
 
 						yield* recordOperationInfo("Project deleted", {
@@ -106,8 +116,8 @@ export class ProjectService extends Context.Service<
 							attributes: { "artiflow.project.id": projectId },
 						}),
 					),
-				get: (projectId) =>
-					repository.getProject(projectId).pipe(
+				get: (ownerUserId, projectId) =>
+					repository.getProject(ownerUserId, projectId).pipe(
 						Effect.flatMap(
 							Option.match({
 								onNone: () => Effect.fail(new ProjectNotFound({ projectId })),
@@ -118,14 +128,27 @@ export class ProjectService extends Context.Service<
 							attributes: { "artiflow.project.id": projectId },
 						}),
 					),
-				list: () =>
+				getPublic: (projectId) =>
+					repository.getPublicProject(projectId).pipe(
+						Effect.flatMap(
+							Option.match({
+								onNone: () => Effect.fail(new ProjectNotFound({ projectId })),
+								onSome: Effect.succeed,
+							}),
+						),
+						Effect.withSpan("artiflow.project.get_public", {
+							attributes: { "artiflow.project.id": projectId },
+						}),
+					),
+				list: (ownerUserId) =>
 					repository
-						.listProjects()
+						.listProjects(ownerUserId)
 						.pipe(Effect.withSpan("artiflow.project.list")),
-				rename: (projectId, requestedName) =>
+				rename: (ownerUserId, projectId, requestedName) =>
 					Effect.gen(function* () {
 						const name = yield* validateProjectName(requestedName);
 						const project = yield* repository.renameProject(
+							ownerUserId,
 							projectId,
 							name,
 							new Date().toISOString(),

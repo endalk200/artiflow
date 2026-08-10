@@ -1,197 +1,197 @@
 {
-  "version": 1,
-  "skills": {
-    "babysit-pr": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/babysit-pr/SKILL.md",
-      "computedHash": "86a4098f5d8b6e2c5c89c81555cef27e1fb5e262f7ac3ad0f4f913088306221a"
-    },
-    "code-review": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/code-review/SKILL.md",
-      "computedHash": "fc1fa39548d6d75c3a77f48eff92274e54493548e8195fa96bc2d2090a2ae6e7"
-    },
-    "codebase-design": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/codebase-design/SKILL.md",
-      "computedHash": "4114e4ac7dd0f4d8a102d6133c6aff75a364baccd5d99e4c4a845d0938fe2aae"
-    },
-    "conventional-commit": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/conventional-commit/SKILL.md",
-      "computedHash": "c090cea8b344c44be2a46853d3bd640391823b8699bcdf8325996b3f176fd62d"
-    },
-    "create-pr": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/create-pr/SKILL.md",
-      "computedHash": "4d2416e3c42fdc9cea012002067001ea4f9fa8e71a2d49e96842c43a1d22dc97"
-    },
-    "diagnosing-bugs": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/diagnosing-bugs/SKILL.md",
-      "computedHash": "78c4d76669f371c69d5678c8607f7350d56966dd20907820e89f9f2357158e50"
-    },
-    "domain-modeling": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/domain-modeling/SKILL.md",
-      "computedHash": "16497672663e18f50d43d1f55b298950808a86219572a9fb31c516727109fada"
-    },
-    "effect": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/effect/SKILL.md",
-      "computedHash": "a2976109a10a3962792ddee6c988786ea32093be9aee77bec07c990032cc655c"
-    },
-    "grill-me": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/grill-me/SKILL.md",
-      "computedHash": "73c1af4fb0a73c009eab72df8629e4afa5202b2f22c68931cc4e9338822d10b4"
-    },
-    "grill-with-docs": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/grill-with-docs/SKILL.md",
-      "computedHash": "3f68b98b42cd5cbe46284313cf2e4345e7e49fb1497ec2cd1f9e8e3dff6aac0e"
-    },
-    "grilling": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/grilling/SKILL.md",
-      "computedHash": "248a28e88a3079acd68182475aa6ff9b08b39b178a8cfceec986112782a3c043"
-    },
-    "handoff": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/handoff/SKILL.md",
-      "computedHash": "ad03e8d4ea3cbbff66420eb7ba3cc375b5cbe1821a2449b53e863256cf5b5cde"
-    },
-    "implement": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/implement/SKILL.md",
-      "computedHash": "d19bdbcff6ae1184f9836d97477fed24f32a3a3d51d4a83980442c576083162a"
-    },
-    "improve-codebase-architecture": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/improve-codebase-architecture/SKILL.md",
-      "computedHash": "be9ea94227fb8551eecccb0a2ae790f2dcabbddd78f4f83a0985b48dbdfbb8fe"
-    },
-    "investigate-library-upgrade": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/investigate-library-upgrade/SKILL.md",
-      "computedHash": "6e976ea55aa5fca019789188ee0cd39b6f43709ea79e923b874979324044ad44"
-    },
-    "prototype": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/prototype/SKILL.md",
-      "computedHash": "44d356a9028dff219a22556d5feec83f5a353592a5b51239355f6b0151e83b09"
-    },
-    "research": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/research/SKILL.md",
-      "computedHash": "86ed6c7f1d72590eb6f78eef25dc3dc5a9dfbfe5a5d68d1855e9ff1689e0b0ef"
-    },
-    "setup-skills": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/setup-skills/SKILL.md",
-      "computedHash": "baabc1d8e821cd75895d8c566d21551463ff108bad15eacb66794f0a6ae73605"
-    },
-    "shadcn": {
-      "source": "shadcn/ui",
-      "sourceType": "github",
-      "skillPath": "skills/shadcn/SKILL.md",
-      "computedHash": "c1a68ee06a668aced9ab2b5fbdea5f989864123794eb2e056b339a072dbb7f10"
-    },
-    "source-context": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/source-context/SKILL.md",
-      "computedHash": "89ba77c75cac197c1226c685362f4d021310b4f5b1327cd47ba07e759b8103de"
-    },
-    "tanstack-form": {
-      "source": "tanstack-skills/tanstack-skills",
-      "sourceType": "github",
-      "skillPath": "plugins/tanstack-form/skills/tanstack-form/SKILL.md",
-      "computedHash": "1eb9f9fc43ab2777f586f916b2234c5340ed98f296a98b22c75cbbafcbd29b86"
-    },
-    "tanstack-query": {
-      "source": "tanstack-skills/tanstack-skills",
-      "sourceType": "github",
-      "skillPath": "plugins/tanstack-query/skills/tanstack-query/SKILL.md",
-      "computedHash": "b8a0477cd4d7bf8fa54d27f8e64d82388402f0d502591db50a357df5b9995c75"
-    },
-    "tanstack-table": {
-      "source": "tanstack-skills/tanstack-skills",
-      "sourceType": "github",
-      "skillPath": "plugins/tanstack-table/skills/tanstack-table/SKILL.md",
-      "computedHash": "d5ac71bd795696cd3310165c3ea0e435c310a0ac3c4e9dd45b39ed91b8dbcbb1"
-    },
-    "tdd": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/tdd/SKILL.md",
-      "computedHash": "5ae828d99057b39eea9e2912d80d0d39290de6a79bcb7f0c26d2ad2f0caaead2"
-    },
-    "teach": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/teach/SKILL.md",
-      "computedHash": "66c753c4815b8230f6b83a09a17f6d920dc642a03c4607c67f3a3b713a547750"
-    },
-    "to-spec": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/to-spec/SKILL.md",
-      "computedHash": "7399834cf937d5cb7c8f6742f1dabcb7533a88a99809744089a2b478c484ebbf"
-    },
-    "to-tickets": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/to-tickets/SKILL.md",
-      "computedHash": "31fe0ee08849b52a701663b8333ac68490b2342b6192fb93494e738b23e517dc"
-    },
-    "triage": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/triage/SKILL.md",
-      "computedHash": "b87e15e86e6d6489d4ff52251f4178062baaba1835f0232c486fe199b16e30c0"
-    },
-    "turborepo": {
-      "source": "vercel/turborepo",
-      "sourceType": "github",
-      "skillPath": "skills/turborepo/SKILL.md",
-      "computedHash": "a1ee68f55f7d232fbe095554f55e22c2080429a8a37c28adceaabad5fbe8a927"
-    },
-    "wait-what": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/wait-what/SKILL.md",
-      "computedHash": "9638acdcd76457ca70a007b5a02c4bf44893fb3064692a9158d907e82f200eec"
-    },
-    "wayfinder": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/wayfinder/SKILL.md",
-      "computedHash": "19e4330de9fd7162ec1b68c8a0336dabf5640e7701889f3a1a4a06f63f301f05"
-    },
-    "writing-for-agents": {
-      "source": "endalk200/skills",
-      "sourceType": "github",
-      "skillPath": "skills/writing-for-agents/SKILL.md",
-      "computedHash": "c5c2bd5ee5518d98e0c6b805b462edb8b80132ca346276127de8c03129806270"
-    }
-  }
+	"version": 1,
+	"skills": {
+		"babysit-pr": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/babysit-pr/SKILL.md",
+			"computedHash": "86a4098f5d8b6e2c5c89c81555cef27e1fb5e262f7ac3ad0f4f913088306221a"
+		},
+		"code-review": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/code-review/SKILL.md",
+			"computedHash": "fc1fa39548d6d75c3a77f48eff92274e54493548e8195fa96bc2d2090a2ae6e7"
+		},
+		"codebase-design": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/codebase-design/SKILL.md",
+			"computedHash": "4114e4ac7dd0f4d8a102d6133c6aff75a364baccd5d99e4c4a845d0938fe2aae"
+		},
+		"conventional-commit": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/conventional-commit/SKILL.md",
+			"computedHash": "c090cea8b344c44be2a46853d3bd640391823b8699bcdf8325996b3f176fd62d"
+		},
+		"create-pr": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/create-pr/SKILL.md",
+			"computedHash": "4d2416e3c42fdc9cea012002067001ea4f9fa8e71a2d49e96842c43a1d22dc97"
+		},
+		"diagnosing-bugs": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/diagnosing-bugs/SKILL.md",
+			"computedHash": "78c4d76669f371c69d5678c8607f7350d56966dd20907820e89f9f2357158e50"
+		},
+		"domain-modeling": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/domain-modeling/SKILL.md",
+			"computedHash": "16497672663e18f50d43d1f55b298950808a86219572a9fb31c516727109fada"
+		},
+		"effect": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/effect/SKILL.md",
+			"computedHash": "a2976109a10a3962792ddee6c988786ea32093be9aee77bec07c990032cc655c"
+		},
+		"grill-me": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/grill-me/SKILL.md",
+			"computedHash": "73c1af4fb0a73c009eab72df8629e4afa5202b2f22c68931cc4e9338822d10b4"
+		},
+		"grill-with-docs": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/grill-with-docs/SKILL.md",
+			"computedHash": "3f68b98b42cd5cbe46284313cf2e4345e7e49fb1497ec2cd1f9e8e3dff6aac0e"
+		},
+		"grilling": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/grilling/SKILL.md",
+			"computedHash": "248a28e88a3079acd68182475aa6ff9b08b39b178a8cfceec986112782a3c043"
+		},
+		"handoff": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/handoff/SKILL.md",
+			"computedHash": "ad03e8d4ea3cbbff66420eb7ba3cc375b5cbe1821a2449b53e863256cf5b5cde"
+		},
+		"implement": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/implement/SKILL.md",
+			"computedHash": "d19bdbcff6ae1184f9836d97477fed24f32a3a3d51d4a83980442c576083162a"
+		},
+		"improve-codebase-architecture": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/improve-codebase-architecture/SKILL.md",
+			"computedHash": "be9ea94227fb8551eecccb0a2ae790f2dcabbddd78f4f83a0985b48dbdfbb8fe"
+		},
+		"investigate-library-upgrade": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/investigate-library-upgrade/SKILL.md",
+			"computedHash": "6e976ea55aa5fca019789188ee0cd39b6f43709ea79e923b874979324044ad44"
+		},
+		"prototype": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/prototype/SKILL.md",
+			"computedHash": "44d356a9028dff219a22556d5feec83f5a353592a5b51239355f6b0151e83b09"
+		},
+		"research": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/research/SKILL.md",
+			"computedHash": "86ed6c7f1d72590eb6f78eef25dc3dc5a9dfbfe5a5d68d1855e9ff1689e0b0ef"
+		},
+		"setup-skills": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/setup-skills/SKILL.md",
+			"computedHash": "baabc1d8e821cd75895d8c566d21551463ff108bad15eacb66794f0a6ae73605"
+		},
+		"shadcn": {
+			"source": "shadcn/ui",
+			"sourceType": "github",
+			"skillPath": "skills/shadcn/SKILL.md",
+			"computedHash": "c1a68ee06a668aced9ab2b5fbdea5f989864123794eb2e056b339a072dbb7f10"
+		},
+		"source-context": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/source-context/SKILL.md",
+			"computedHash": "89ba77c75cac197c1226c685362f4d021310b4f5b1327cd47ba07e759b8103de"
+		},
+		"tanstack-form": {
+			"source": "tanstack-skills/tanstack-skills",
+			"sourceType": "github",
+			"skillPath": "plugins/tanstack-form/skills/tanstack-form/SKILL.md",
+			"computedHash": "1eb9f9fc43ab2777f586f916b2234c5340ed98f296a98b22c75cbbafcbd29b86"
+		},
+		"tanstack-query": {
+			"source": "tanstack-skills/tanstack-skills",
+			"sourceType": "github",
+			"skillPath": "plugins/tanstack-query/skills/tanstack-query/SKILL.md",
+			"computedHash": "b8a0477cd4d7bf8fa54d27f8e64d82388402f0d502591db50a357df5b9995c75"
+		},
+		"tanstack-table": {
+			"source": "tanstack-skills/tanstack-skills",
+			"sourceType": "github",
+			"skillPath": "plugins/tanstack-table/skills/tanstack-table/SKILL.md",
+			"computedHash": "d5ac71bd795696cd3310165c3ea0e435c310a0ac3c4e9dd45b39ed91b8dbcbb1"
+		},
+		"tdd": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/tdd/SKILL.md",
+			"computedHash": "5ae828d99057b39eea9e2912d80d0d39290de6a79bcb7f0c26d2ad2f0caaead2"
+		},
+		"teach": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/teach/SKILL.md",
+			"computedHash": "66c753c4815b8230f6b83a09a17f6d920dc642a03c4607c67f3a3b713a547750"
+		},
+		"to-spec": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/to-spec/SKILL.md",
+			"computedHash": "7399834cf937d5cb7c8f6742f1dabcb7533a88a99809744089a2b478c484ebbf"
+		},
+		"to-tickets": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/to-tickets/SKILL.md",
+			"computedHash": "31fe0ee08849b52a701663b8333ac68490b2342b6192fb93494e738b23e517dc"
+		},
+		"triage": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/triage/SKILL.md",
+			"computedHash": "b87e15e86e6d6489d4ff52251f4178062baaba1835f0232c486fe199b16e30c0"
+		},
+		"turborepo": {
+			"source": "vercel/turborepo",
+			"sourceType": "github",
+			"skillPath": "skills/turborepo/SKILL.md",
+			"computedHash": "a1ee68f55f7d232fbe095554f55e22c2080429a8a37c28adceaabad5fbe8a927"
+		},
+		"wait-what": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/wait-what/SKILL.md",
+			"computedHash": "9638acdcd76457ca70a007b5a02c4bf44893fb3064692a9158d907e82f200eec"
+		},
+		"wayfinder": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/wayfinder/SKILL.md",
+			"computedHash": "19e4330de9fd7162ec1b68c8a0336dabf5640e7701889f3a1a4a06f63f301f05"
+		},
+		"writing-for-agents": {
+			"source": "endalk200/skills",
+			"sourceType": "github",
+			"skillPath": "skills/writing-for-agents/SKILL.md",
+			"computedHash": "c5c2bd5ee5518d98e0c6b805b462edb8b80132ca346276127de8c03129806270"
+		}
+	}
 }

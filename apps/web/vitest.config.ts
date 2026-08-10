@@ -17,6 +17,16 @@ export default defineConfig({
 		include: ["@tanstack/react-query"],
 	},
 	test: {
+		env: {
+			BETTER_AUTH_SECRET:
+				"unit-test-secret-that-is-at-least-thirty-two-characters",
+			BETTER_AUTH_URL: "http://localhost:3000",
+			DATABASE_URL:
+				process.env.DATABASE_TEST_URL ??
+				"postgresql://artiflow:artiflow@localhost:5432/artiflow_test",
+			GITHUB_CLIENT_ID: "github-test-client-id",
+			GITHUB_CLIENT_SECRET: "github-test-client-secret",
+		},
 		projects: [
 			{
 				extends: true,

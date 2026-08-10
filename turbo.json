@@ -4,7 +4,15 @@
 	"tasks": {
 		"build": {
 			"dependsOn": ["^build"],
-			"env": ["ARTIFLOW_PUBLIC_BASE_URL", "DATABASE_URL", "NEXT_PUBLIC_APP_URL"],
+			"env": [
+				"ARTIFLOW_PUBLIC_BASE_URL",
+				"BETTER_AUTH_SECRET",
+				"BETTER_AUTH_URL",
+				"DATABASE_URL",
+				"GITHUB_CLIENT_ID",
+				"GITHUB_CLIENT_SECRET",
+				"NEXT_PUBLIC_APP_URL"
+			],
 			"inputs": ["$TURBO_DEFAULT$", ".env*"],
 			"outputs": [".next/**", "!.next/cache/**"],
 			"passThroughEnv": [
@@ -64,6 +72,11 @@
 			"cache": false,
 			"persistent": true,
 			"passThroughEnv": [
+				"BETTER_AUTH_SECRET",
+				"BETTER_AUTH_URL",
+				"DATABASE_URL",
+				"GITHUB_CLIENT_ID",
+				"GITHUB_CLIENT_SECRET",
 				"OTEL_EXPORTER_OTLP_ENDPOINT",
 				"OTEL_EXPORTER_OTLP_LOGS_ENDPOINT",
 				"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",

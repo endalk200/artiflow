@@ -13,6 +13,7 @@ export type CreateProjectRecord = {
 	readonly requestHash: string;
 	readonly name: string;
 	readonly now: string;
+	readonly ownerUserId: string;
 };
 
 export type CreateProjectResult =
@@ -25,6 +26,7 @@ export type CreateArtifactRecord = {
 	readonly description?: string;
 	readonly idempotencyKey: string;
 	readonly now: string;
+	readonly ownerUserId: string;
 	readonly projectId: string;
 	readonly requestHash: string;
 	readonly revisionId: string;
@@ -83,32 +85,48 @@ export type ArtiflowRepositoryShape = {
 		input: CreateProjectRecord,
 	) => Effect.Effect<CreateProjectResult, InfrastructureError>;
 	readonly deleteArtifact: (
+		ownerUserId: string,
 		artifactId: string,
 	) => Effect.Effect<boolean, InfrastructureError>;
 	readonly deleteProject: (
+		ownerUserId: string,
 		projectId: string,
 	) => Effect.Effect<boolean, InfrastructureError>;
 	readonly getArtifact: (
+		ownerUserId: string,
+		artifactId: string,
+	) => Effect.Effect<Option.Option<Artifact>, InfrastructureError>;
+	readonly getPublicArtifact: (
 		artifactId: string,
 	) => Effect.Effect<Option.Option<Artifact>, InfrastructureError>;
 	readonly getProject: (
+		ownerUserId: string,
+		projectId: string,
+	) => Effect.Effect<Option.Option<Project>, InfrastructureError>;
+	readonly getPublicProject: (
 		projectId: string,
 	) => Effect.Effect<Option.Option<Project>, InfrastructureError>;
 	readonly getRevision: (
+		ownerUserId: string,
+		artifactId: string,
+		revisionNumber?: number,
+	) => Effect.Effect<Option.Option<StoredRevision>, InfrastructureError>;
+	readonly getPublicRevision: (
 		artifactId: string,
 		revisionNumber?: number,
 	) => Effect.Effect<Option.Option<StoredRevision>, InfrastructureError>;
 	readonly listArtifacts: (
+		ownerUserId: string,
 		projectId: string,
 	) => Effect.Effect<
 		Option.Option<ReadonlyArray<ArtifactSummary>>,
 		InfrastructureError
 	>;
-	readonly listProjects: () => Effect.Effect<
-		ReadonlyArray<ProjectListItem>,
-		InfrastructureError
-	>;
+	readonly listProjects: (
+		ownerUserId: string,
+	) => Effect.Effect<ReadonlyArray<ProjectListItem>, InfrastructureError>;
 	readonly renameProject: (
+		ownerUserId: string,
 		projectId: string,
 		name: string,
 		now: string,
@@ -118,6 +136,7 @@ export type ArtiflowRepositoryShape = {
 type StoredProject = {
 	readonly project: Project;
 	readonly idempotencyKey: string;
+	readonly ownerUserId: string;
 	readonly requestHash: string;
 };
 
@@ -133,6 +152,9 @@ type StoredPublication = {
 	readonly publication: PublicationRecord;
 	readonly requestHash: string;
 };
+
+const scopedIdempotencyKey = (ownerUserId: string, idempotencyKey: string) =>
+	JSON.stringify([ownerUserId, idempotencyKey]);
 
 export class ArtiflowRepository extends Context.Service<
 	ArtiflowRepository,
@@ -182,10 +204,40 @@ export class ArtiflowRepository extends Context.Service<
 				}
 			};
 
+			const ownsProject = (ownerUserId: string, projectId: string) =>
+				projects.get(projectId)?.ownerUserId === ownerUserId;
+
+			const ownsArtifact = (ownerUserId: string, artifactId: string) => {
+				const artifact = artifacts.get(artifactId);
+				return (
+					artifact !== undefined && ownsProject(ownerUserId, artifact.projectId)
+				);
+			};
+
+			const readRevision = (artifactId: string, revisionNumber?: number) => {
+				const artifact = artifacts.get(artifactId);
+				if (artifact === undefined) return Option.none<StoredRevision>();
+				const history = revisions.get(artifactId) ?? [];
+				return Option.fromNullishOr(
+					revisionNumber === undefined
+						? history.find(
+								(revision) => revision.id === artifact.currentRevisionId,
+							)
+						: history.find((revision) => revision.number === revisionNumber),
+				);
+			};
+
 			return ArtiflowRepository.of({
 				appendRevision: (input) =>
 					Effect.sync(() => {
-						const replay = publications.get(input.idempotencyKey);
+						if (!ownsArtifact(input.ownerUserId, input.artifactId)) {
+							return { _tag: "artifactNotFound" } as const;
+						}
+						const idempotencyKey = scopedIdempotencyKey(
+							input.ownerUserId,
+							input.idempotencyKey,
+						);
+						const replay = publications.get(idempotencyKey);
 						if (replay !== undefined) {
 							return replay.requestHash === input.requestHash &&
 								replay.publication.artifactId === input.artifactId
@@ -235,7 +287,7 @@ export class ArtiflowRepository extends Context.Service<
 							revisionId: input.revisionId,
 							revisionNumber: number,
 						};
-						publications.set(input.idempotencyKey, {
+						publications.set(idempotencyKey, {
 							publication,
 							requestHash: input.requestHash,
 						});
@@ -243,7 +295,14 @@ export class ArtiflowRepository extends Context.Service<
 					}),
 				createArtifact: (input) =>
 					Effect.sync(() => {
-						const replay = publications.get(input.idempotencyKey);
+						if (!ownsProject(input.ownerUserId, input.projectId)) {
+							return { _tag: "projectNotFound" } as const;
+						}
+						const idempotencyKey = scopedIdempotencyKey(
+							input.ownerUserId,
+							input.idempotencyKey,
+						);
+						const replay = publications.get(idempotencyKey);
 						if (replay !== undefined) {
 							return replay.requestHash === input.requestHash &&
 								replay.publication.projectId === input.projectId
@@ -253,9 +312,6 @@ export class ArtiflowRepository extends Context.Service<
 									} as const)
 								: ({ _tag: "conflict" } as const);
 						}
-						if (!projects.has(input.projectId))
-							return { _tag: "projectNotFound" } as const;
-
 						const revision = new Revision({
 							artifactId: input.artifactId,
 							createdAt: input.now,
@@ -282,7 +338,7 @@ export class ArtiflowRepository extends Context.Service<
 							revisionId: input.revisionId,
 							revisionNumber: 1,
 						};
-						publications.set(input.idempotencyKey, {
+						publications.set(idempotencyKey, {
 							publication,
 							requestHash: input.requestHash,
 						});
@@ -290,9 +346,11 @@ export class ArtiflowRepository extends Context.Service<
 					}),
 				createProject: (input) =>
 					Effect.sync(() => {
-						const existingId = projectIdsByIdempotencyKey.get(
+						const idempotencyKey = scopedIdempotencyKey(
+							input.ownerUserId,
 							input.idempotencyKey,
 						);
+						const existingId = projectIdsByIdempotencyKey.get(idempotencyKey);
 						if (existingId !== undefined) {
 							const existing = projects.get(existingId);
 							if (
@@ -311,23 +369,24 @@ export class ArtiflowRepository extends Context.Service<
 							updatedAt: input.now,
 						});
 						projects.set(input.id, {
-							idempotencyKey: input.idempotencyKey,
+							idempotencyKey,
+							ownerUserId: input.ownerUserId,
 							project,
 							requestHash: input.requestHash,
 						});
-						projectIdsByIdempotencyKey.set(input.idempotencyKey, input.id);
+						projectIdsByIdempotencyKey.set(idempotencyKey, input.id);
 						return { _tag: "created", project } as const;
 					}),
-				deleteArtifact: (artifactId) =>
+				deleteArtifact: (ownerUserId, artifactId) =>
 					Effect.sync(() => {
-						if (!artifacts.has(artifactId)) return false;
+						if (!ownsArtifact(ownerUserId, artifactId)) return false;
 						deleteArtifactState(artifactId);
 						return true;
 					}),
-				deleteProject: (projectId) =>
+				deleteProject: (ownerUserId, projectId) =>
 					Effect.sync(() => {
 						const existing = projects.get(projectId);
-						if (existing === undefined) return false;
+						if (existing?.ownerUserId !== ownerUserId) return false;
 						for (const artifact of artifacts.values()) {
 							if (artifact.projectId === projectId)
 								deleteArtifactState(artifact.id);
@@ -336,32 +395,38 @@ export class ArtiflowRepository extends Context.Service<
 						projectIdsByIdempotencyKey.delete(existing.idempotencyKey);
 						return true;
 					}),
-				getArtifact: (artifactId) =>
+				getArtifact: (ownerUserId, artifactId) =>
+					Effect.sync(() =>
+						ownsArtifact(ownerUserId, artifactId)
+							? Option.fromNullishOr(artifacts.get(artifactId))
+							: Option.none<StoredArtifact>(),
+					).pipe(Effect.map(Option.map(toArtifact))),
+				getPublicArtifact: (artifactId) =>
 					Effect.sync(() =>
 						Option.fromNullishOr(artifacts.get(artifactId)),
 					).pipe(Effect.map(Option.map(toArtifact))),
-				getProject: (projectId) =>
+				getProject: (ownerUserId, projectId) =>
+					Effect.sync(() => {
+						const stored = projects.get(projectId);
+						return stored?.ownerUserId === ownerUserId
+							? Option.some(stored.project)
+							: Option.none<Project>();
+					}),
+				getPublicProject: (projectId) =>
 					Effect.sync(() =>
 						Option.fromNullishOr(projects.get(projectId)?.project),
 					),
-				getRevision: (artifactId, revisionNumber) =>
+				getRevision: (ownerUserId, artifactId, revisionNumber) =>
+					Effect.sync(() =>
+						ownsArtifact(ownerUserId, artifactId)
+							? readRevision(artifactId, revisionNumber)
+							: Option.none<StoredRevision>(),
+					),
+				getPublicRevision: (artifactId, revisionNumber) =>
+					Effect.sync(() => readRevision(artifactId, revisionNumber)),
+				listArtifacts: (ownerUserId, projectId) =>
 					Effect.sync(() => {
-						const artifact = artifacts.get(artifactId);
-						if (artifact === undefined) return Option.none<StoredRevision>();
-						const history = revisions.get(artifactId) ?? [];
-						return Option.fromNullishOr(
-							revisionNumber === undefined
-								? history.find(
-										(revision) => revision.id === artifact.currentRevisionId,
-									)
-								: history.find(
-										(revision) => revision.number === revisionNumber,
-									),
-						);
-					}),
-				listArtifacts: (projectId) =>
-					Effect.sync(() => {
-						if (!projects.has(projectId))
+						if (!ownsProject(ownerUserId, projectId))
 							return Option.none<ReadonlyArray<ArtifactSummary>>();
 						const summaries = [...artifacts.values()]
 							.filter((artifact) => artifact.projectId === projectId)
@@ -372,9 +437,10 @@ export class ArtiflowRepository extends Context.Service<
 							});
 						return Option.some(summaries);
 					}),
-				listProjects: () =>
+				listProjects: (ownerUserId) =>
 					Effect.sync(() =>
 						[...projects.values()]
+							.filter((stored) => stored.ownerUserId === ownerUserId)
 							.map(({ project }) => ({
 								artifactCount: [...artifacts.values()].filter(
 									(artifact) => artifact.projectId === project.id,
@@ -385,10 +451,10 @@ export class ArtiflowRepository extends Context.Service<
 								b.project.updatedAt.localeCompare(a.project.updatedAt),
 							),
 					),
-				renameProject: (projectId, name, now) =>
+				renameProject: (ownerUserId, projectId, name, now) =>
 					Effect.sync(() => {
 						const existing = projects.get(projectId);
-						if (existing === undefined) return Option.none();
+						if (existing?.ownerUserId !== ownerUserId) return Option.none();
 						const project = new Project({
 							...existing.project,
 							name,

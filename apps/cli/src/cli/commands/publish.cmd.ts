@@ -2,6 +2,7 @@ import { Effect, FileSystem, Option, Path } from "effect";
 import { Argument, Command, Flag } from "effect/unstable/cli";
 
 import { ArtiflowApiClient, withTransientRetry } from "../../api-client.js";
+import { requireCredential } from "../../auth/require-credential.js";
 import { findProjectManifest } from "../../project-manifest.js";
 import { ArtifactProjectMismatch, SourceFileError } from "../../runtime/command-errors.js";
 import { printResult } from "../output.js";
@@ -15,6 +16,7 @@ export const publishCommand = Command.make(
 	},
 	({ artifactId, json, sourcePath }) =>
 		Effect.gen(function* () {
+			yield* requireCredential;
 			const manifest = yield* findProjectManifest();
 			const fs = yield* FileSystem.FileSystem;
 			const pathService = yield* Path.Path;
