@@ -250,10 +250,15 @@ test("CLI device login completes through browser approval without exposing token
 	}
 });
 
-test("Auth route matrix keeps private work private and share pages public", async ({
+test("Auth route matrix keeps every Project and Artifact page private", async ({
 	page,
 	request,
 }) => {
+	await page.goto("/");
+	await expect(
+		page.getByRole("heading", { name: "See the plan. Understand the work." }),
+	).toBeVisible();
+
 	await page.goto("/projects");
 	const signInURL = new URL(page.url());
 	expect(signInURL.pathname).toBe("/sign-in");
@@ -267,8 +272,8 @@ test("Auth route matrix keeps private work private and share pages public", asyn
 	const unique = crypto.randomUUID();
 	const projectResponse = await request.post("/api/projects/", {
 		data: {
-			idempotencyKey: `e2e_public_project_${unique}`,
-			name: "Public share E2E Project",
+			idempotencyKey: `e2e_private_project_${unique}`,
+			name: "Private E2E Project",
 		},
 		headers: authorizationHeaders,
 	});
@@ -280,9 +285,9 @@ test("Auth route matrix keeps private work private and share pages public", asyn
 			`/api/projects/${project.id}/artifacts`,
 			{
 				data: {
-					idempotencyKey: `e2e_public_artifact_${unique}`,
+					idempotencyKey: `e2e_private_artifact_${unique}`,
 					source:
-						"---\ntitle: Public E2E Artifact\ndescription: Public route coverage\n---\n\n## Shared\n\nThis share page is public.",
+						"---\ntitle: Private E2E Artifact\ndescription: Private route coverage\n---\n\n## Private\n\nThis Artifact requires its owner.",
 					sourceFormatVersion: 1,
 				},
 				headers: authorizationHeaders,
@@ -294,13 +299,27 @@ test("Auth route matrix keeps private work private and share pages public", asyn
 		};
 
 		await page.goto(`/artifacts/${artifact.artifactId}`);
-		await expect(
-			page.getByRole("heading", { name: "Public E2E Artifact" }),
-		).toBeVisible();
-		await expect(page.getByText("This share page is public.")).toBeVisible();
-		expect(new URL(page.url()).pathname).toBe(
+		const artifactSignInURL = new URL(page.url());
+		expect(artifactSignInURL.pathname).toBe("/sign-in");
+		expect(artifactSignInURL.searchParams.get("callbackURL")).toBe(
 			`/artifacts/${artifact.artifactId}`,
 		);
+
+		await page.goto(`/artifacts/${artifact.artifactId}/revisions/1`);
+		const revisionSignInURL = new URL(page.url());
+		expect(revisionSignInURL.pathname).toBe("/sign-in");
+		expect(revisionSignInURL.searchParams.get("callbackURL")).toBe(
+			`/artifacts/${artifact.artifactId}/revisions/1`,
+		);
+
+		await page.setExtraHTTPHeaders(authorizationHeaders);
+		await page.goto(`/artifacts/${artifact.artifactId}`);
+		await expect(
+			page.getByRole("heading", { name: "Private E2E Artifact" }),
+		).toBeVisible();
+		await expect(
+			page.getByText("This Artifact requires its owner."),
+		).toBeVisible();
 	} finally {
 		const cleanupResponse = await request.delete(
 			`/api/projects/${project.id}`,
@@ -515,6 +534,7 @@ test("CLI publication opens as a browser Artifact", async ({
 		);
 		const artifactId = String(publication.artifactId);
 
+		await page.setExtraHTTPHeaders(authorizationHeaders);
 		await page.goto(`/artifacts/${artifactId}`);
 		await expect(
 			page.getByRole("heading", { name: "Published through the CLI" }),

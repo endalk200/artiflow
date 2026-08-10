@@ -96,22 +96,12 @@ export type ArtiflowRepositoryShape = {
 		ownerUserId: string,
 		artifactId: string,
 	) => Effect.Effect<Option.Option<Artifact>, InfrastructureError>;
-	readonly getPublicArtifact: (
-		artifactId: string,
-	) => Effect.Effect<Option.Option<Artifact>, InfrastructureError>;
 	readonly getProject: (
 		ownerUserId: string,
 		projectId: string,
 	) => Effect.Effect<Option.Option<Project>, InfrastructureError>;
-	readonly getPublicProject: (
-		projectId: string,
-	) => Effect.Effect<Option.Option<Project>, InfrastructureError>;
 	readonly getRevision: (
 		ownerUserId: string,
-		artifactId: string,
-		revisionNumber?: number,
-	) => Effect.Effect<Option.Option<StoredRevision>, InfrastructureError>;
-	readonly getPublicRevision: (
 		artifactId: string,
 		revisionNumber?: number,
 	) => Effect.Effect<Option.Option<StoredRevision>, InfrastructureError>;
@@ -401,10 +391,6 @@ export class ArtiflowRepository extends Context.Service<
 							? Option.fromNullishOr(artifacts.get(artifactId))
 							: Option.none<StoredArtifact>(),
 					).pipe(Effect.map(Option.map(toArtifact))),
-				getPublicArtifact: (artifactId) =>
-					Effect.sync(() =>
-						Option.fromNullishOr(artifacts.get(artifactId)),
-					).pipe(Effect.map(Option.map(toArtifact))),
 				getProject: (ownerUserId, projectId) =>
 					Effect.sync(() => {
 						const stored = projects.get(projectId);
@@ -412,18 +398,12 @@ export class ArtiflowRepository extends Context.Service<
 							? Option.some(stored.project)
 							: Option.none<Project>();
 					}),
-				getPublicProject: (projectId) =>
-					Effect.sync(() =>
-						Option.fromNullishOr(projects.get(projectId)?.project),
-					),
 				getRevision: (ownerUserId, artifactId, revisionNumber) =>
 					Effect.sync(() =>
 						ownsArtifact(ownerUserId, artifactId)
 							? readRevision(artifactId, revisionNumber)
 							: Option.none<StoredRevision>(),
 					),
-				getPublicRevision: (artifactId, revisionNumber) =>
-					Effect.sync(() => readRevision(artifactId, revisionNumber)),
 				listArtifacts: (ownerUserId, projectId) =>
 					Effect.sync(() => {
 						if (!ownsProject(ownerUserId, projectId))

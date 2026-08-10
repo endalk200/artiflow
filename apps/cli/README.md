@@ -48,6 +48,46 @@ Set `ARTIFLOW_CONFIG_PATH` to read a different config file. An
 `ARTIFLOW_BASE_URL` value takes precedence over `base_url`. Telemetry defaults
 to enabled; set `telemetry = false` to disable it persistently.
 
+## Authentication
+
+Remote commands require a GitHub-backed Artiflow session. Configure the server
+URL first, then start the browser-based device authorization flow:
+
+```sh
+artiflow auth login
+```
+
+The command displays a one-time code and opens the Artiflow authorization page.
+Sign in with GitHub if prompted, confirm the displayed code, and approve the
+CLI. If the browser cannot be opened automatically, use the printed URL, or
+disable automatic opening explicitly:
+
+```sh
+artiflow auth login --no-open
+```
+
+Inspect or remove the credential for the configured server with:
+
+```sh
+artiflow auth status
+artiflow auth status --json
+artiflow auth logout
+```
+
+Credentials are stored separately for each normalized Artiflow base URL. The
+default credential file is `~/.artiflow/credentials.json`; set
+`ARTIFLOW_CREDENTIALS_PATH` to use a different path. When
+`ARTIFLOW_CONFIG_PATH` is set without an explicit credentials path, the
+credential file is stored next to that config file. Credential files are
+written atomically with owner-only permissions on supported filesystems.
+
+For safety, non-loopback Artiflow servers must use HTTPS. A credential rejected
+by the server is removed automatically, after which `artiflow auth login` must
+be run again.
+
+Artifact URLs also require the owning user's authenticated browser session. An
+Artifact URL does not grant public or cross-account access.
+
 ## Telemetry
 
 The CLI exports Effect traces and structured logs using OTLP/HTTP protobuf. By

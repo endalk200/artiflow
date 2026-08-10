@@ -92,18 +92,8 @@ export type ArtifactServiceShape = {
 		ownerUserId: string,
 		artifactId: string,
 	) => Effect.Effect<Artifact, ArtifactNotFound | InfrastructureError>;
-	readonly getPublic: (
-		artifactId: string,
-	) => Effect.Effect<Artifact, ArtifactNotFound | InfrastructureError>;
 	readonly getRevision: (
 		ownerUserId: string,
-		artifactId: string,
-		revisionNumber?: number,
-	) => Effect.Effect<
-		StoredRevision,
-		ArtifactNotFound | InfrastructureError | RevisionNotFound
-	>;
-	readonly getPublicRevision: (
 		artifactId: string,
 		revisionNumber?: number,
 	) => Effect.Effect<
@@ -298,18 +288,6 @@ export class ArtifactService extends Context.Service<
 							attributes: { "artiflow.artifact.id": artifactId },
 						}),
 					),
-				getPublic: (artifactId) =>
-					repository.getPublicArtifact(artifactId).pipe(
-						Effect.flatMap(
-							Option.match({
-								onNone: () => Effect.fail(new ArtifactNotFound({ artifactId })),
-								onSome: Effect.succeed,
-							}),
-						),
-						Effect.withSpan("artiflow.artifact.get_public", {
-							attributes: { "artiflow.artifact.id": artifactId },
-						}),
-					),
 				getRevision: (ownerUserId, artifactId, revisionNumber) =>
 					Effect.gen(function* () {
 						const artifact = yield* repository.getArtifact(
@@ -335,35 +313,6 @@ export class ArtifactService extends Context.Service<
 						});
 					}).pipe(
 						Effect.withSpan("artiflow.artifact.get_revision", {
-							attributes: {
-								"artiflow.artifact.id": artifactId,
-								...(revisionNumber === undefined
-									? {}
-									: { "artiflow.revision.number": revisionNumber }),
-							},
-						}),
-					),
-				getPublicRevision: (artifactId, revisionNumber) =>
-					Effect.gen(function* () {
-						const artifact = yield* repository.getPublicArtifact(artifactId);
-						if (Option.isNone(artifact))
-							return yield* new ArtifactNotFound({ artifactId });
-						const revision = yield* repository.getPublicRevision(
-							artifactId,
-							revisionNumber,
-						);
-						return yield* Option.match(revision, {
-							onNone: () =>
-								Effect.fail(
-									new RevisionNotFound({
-										artifactId,
-										revisionNumber: revisionNumber ?? -1,
-									}),
-								),
-							onSome: Effect.succeed,
-						});
-					}).pipe(
-						Effect.withSpan("artiflow.artifact.get_public_revision", {
 							attributes: {
 								"artiflow.artifact.id": artifactId,
 								...(revisionNumber === undefined

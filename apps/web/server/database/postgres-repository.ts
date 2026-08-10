@@ -478,8 +478,6 @@ export const postgresRepositoryLayer = (databaseUrl: string) => {
 					readArtifact(artifactId, ownerUserId).pipe(
 						Effect.mapError(infrastructureError),
 					),
-				getPublicArtifact: (artifactId) =>
-					readArtifact(artifactId).pipe(Effect.mapError(infrastructureError)),
 				getProject: (ownerUserId, projectId) =>
 					db
 						.select()
@@ -497,24 +495,8 @@ export const postgresRepositoryLayer = (databaseUrl: string) => {
 							),
 							Effect.mapError(infrastructureError),
 						),
-				getPublicProject: (projectId) =>
-					db
-						.select()
-						.from(projectsTable)
-						.where(eq(projectsTable.id, projectId))
-						.limit(1)
-						.pipe(
-							Effect.map((rows) =>
-								Option.fromNullishOr(rows[0]).pipe(Option.map(asProject)),
-							),
-							Effect.mapError(infrastructureError),
-						),
 				getRevision: (ownerUserId, artifactId, revisionNumber) =>
 					readRevision(artifactId, revisionNumber, ownerUserId).pipe(
-						Effect.mapError(infrastructureError),
-					),
-				getPublicRevision: (artifactId, revisionNumber) =>
-					readRevision(artifactId, revisionNumber).pipe(
 						Effect.mapError(infrastructureError),
 					),
 				listArtifacts: (ownerUserId, projectId) =>

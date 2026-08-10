@@ -153,7 +153,7 @@ describe("ArtifactService", () => {
 		}).pipe(run),
 	);
 
-	it.effect("isolates management operations while retaining public reads", () =>
+	it.effect("isolates all Artifact operations by owner", () =>
 		Effect.gen(function* () {
 			const projects = yield* ProjectService;
 			const artifacts = yield* ArtifactService;
@@ -182,14 +182,6 @@ describe("ArtifactService", () => {
 			);
 
 			assert.notStrictEqual(publicationA.artifactId, publicationB.artifactId);
-			assert.strictEqual(
-				(yield* artifacts.getPublic(publicationA.artifactId)).id,
-				publicationA.artifactId,
-			);
-			assert.strictEqual(
-				(yield* artifacts.getPublicRevision(publicationA.artifactId)).number,
-				1,
-			);
 
 			const wrongOwnerArtifact = yield* Effect.flip(
 				artifacts.get(ownerB, publicationA.artifactId),

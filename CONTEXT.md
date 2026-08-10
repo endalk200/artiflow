@@ -1,6 +1,6 @@
 # Artiflow
 
-Artiflow turns agent-produced documents into visual, shareable experiences organized by the work they belong to.
+Artiflow turns agent-produced documents into private visual experiences organized by the work they belong to.
 
 ## Language
 

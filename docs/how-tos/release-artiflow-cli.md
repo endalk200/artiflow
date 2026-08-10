@@ -37,6 +37,8 @@ bun run changeset
 
 Select the appropriate semver bump for `artiflow`. Before merging, run the repository checks required by `AGENTS.md` and wait for the protected GitHub checks.
 
+For a release that needs richer GitHub notes, add `docs/releases/artiflow-cli-vX.Y.Z.md` with the intended version. The staging workflow uses that file as the draft GitHub Release body and falls back to a minimal generated note when it is absent.
+
 ### 2. Review the Version Packages pull request
 
 After the change reaches `main`, the `Release PR` workflow updates `changeset-release/main` and opens or updates the `Version Packages` pull request. Review that:
@@ -44,6 +46,7 @@ After the change reaches `main`, the `Release PR` workflow updates `changeset-re
 - `apps/cli/package.json` has the intended version.
 - `apps/cli/CHANGELOG.md` contains the intended entry.
 - `apps/cli/src/version.generated.ts` matches the package version.
+- `docs/releases/artiflow-cli-vX.Y.Z.md`, when present, matches the intended version and accurately describes the release.
 - No unrelated files are present.
 
 Pull requests created with the repository `github.token` do not trigger additional GitHub Actions workflows. Configure a narrowly scoped `RELEASE_PR_TOKEN`, open the pushed release branch manually, or close and reopen the bot-created pull request before merging so `Quality Gate` and `Analyze` run on its head commit.

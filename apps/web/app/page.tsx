@@ -269,7 +269,7 @@ export default function Home() {
 								],
 								[
 									"Read",
-									"Open the stable Artifact URL — table of contents, diagrams, and the full Revision history, ready to share.",
+									"Open the stable Artifact URL — table of contents, diagrams, and the full Revision history, ready to revisit.",
 								],
 							].map(([title, description], index) => (
 								<li

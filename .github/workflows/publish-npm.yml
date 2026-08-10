@@ -296,7 +296,11 @@ jobs:
           fi
 
           notes="${RUNNER_TEMP}/release-notes.md"
-          cat > "${notes}" <<EOF
+          notes_source="docs/releases/artiflow-cli-v${VERSION}.md"
+          if [[ -f "${notes_source}" ]]; then
+            cp "${notes_source}" "${notes}"
+          else
+            cat > "${notes}" <<EOF
           artiflow ${VERSION}
 
           The npm package has been staged and is pending npm-side maintainer approval with 2FA.
@@ -306,6 +310,7 @@ jobs:
 
               npm install --global artiflow@${VERSION}
           EOF
+          fi
 
           if gh release view "${tag}" >/dev/null 2>&1; then
             if [[ "$(gh release view "${tag}" --json isDraft --jq .isDraft)" != true ]]; then

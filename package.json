@@ -7,7 +7,7 @@
 		"js-yaml": "5.2.3",
 		"turbo": "^2.9.14",
 		"typescript": "^6.0.3",
-		"undici": "8.9.0"
+		"undici": "8.10.0"
 	},
 	"engines": {
 		"node": ">=22.19.0"
@@ -52,7 +52,7 @@
 	"overrides": {
 		"@hono/node-server": "1.19.14",
 		"hono": "4.12.30",
-		"postcss": "8.5.19",
+		"postcss": "8.5.26",
 		"protobufjs": "7.6.5"
 	}
 }
