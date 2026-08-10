@@ -14,6 +14,8 @@ Issues and PRDs for this repo live as GitLab issues. Use the [`glab`](https://gi
 
 Infer the repo from `git remote -v` — `glab` does this automatically when run inside a clone.
 
+Resolve triage category and state roles through `docs/agents/triage-labels.md`.
+
 ## Merge requests as a triage surface
 
 **MRs as a request surface: no.** _(Set to `yes` if this repo treats external merge requests as feature requests; `triage` reads this flag.)_

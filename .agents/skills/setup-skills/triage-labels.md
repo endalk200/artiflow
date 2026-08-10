@@ -2,6 +2,13 @@
 
 The skills speak in terms of canonical role names. This file maps those roles to the actual label strings used in this repo's issue tracker.
 
+## Triage categories
+
+| Canonical role | Label in our tracker | Meaning                    |
+| -------------- | -------------------- | -------------------------- |
+| `bug`          | `bug`                | Something is broken        |
+| `enhancement`  | `enhancement`        | New feature or improvement |
+
 ## Triage states
 
 | Canonical role             | Label in our tracker | Meaning                                  |
@@ -22,6 +29,6 @@ The skills speak in terms of canonical role names. This file maps those roles to
 | `wayfinder:grilling`    | `wayfinder:grilling`   | Decision-making conversation           |
 | `wayfinder:task`        | `wayfinder:task`       | Prerequisite work that unblocks a decision |
 
-When a skill mentions a role (e.g. "apply the AFK-ready triage label" or `wayfinder:research`), use the corresponding label string from these tables.
+Keep only the sections used by the installed skills. When a skill mentions a canonical role, use the corresponding label string from these tables.
 
 Edit the right-hand column to match whatever vocabulary you actually use.

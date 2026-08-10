@@ -17,9 +17,14 @@ This command is _informed_ by the project's domain model and built on a shared d
 
 ### 1. Explore
 
+**Scope before you scan — YAGNI.** Deepening a module pays off by making future changes to it easier, so decide _where_ to look before you look and put extra weight on the parts of the codebase that have recently changed:
+
+- If the user named a direction — a module, subsystem, or pain point — take it and skip the inference below.
+- Otherwise, inspect a useful stretch of commit history to find recurring hot spots and let those paths pull your attention first. Widen the scan only when the changes are too scattered to reveal a useful focus.
+
 Read the project's domain glossary (`CONTEXT.md`) and any ADRs in the area you're touching first.
 
-Then use the `task` tool with `subagent_type=explore` to walk the codebase. Don't follow rigid heuristics — explore organically and note where you experience friction:
+Explore the codebase directly or delegate the scan to an isolated exploration subagent using the host's subagent mechanism. Don't follow rigid heuristics — explore organically and note where you experience friction:
 
 - Where does understanding one concept require bouncing between many small modules?
 - Where are modules **shallow** — interface nearly as complex as the implementation?
@@ -56,7 +61,7 @@ Do NOT propose interfaces yet. After the file is written, ask the user: "Which o
 
 ### 3. Grilling loop
 
-Once the user picks a candidate, run the `grilling` skill to walk the design tree with them — constraints, dependencies, the shape of the deepened module, what sits behind the seam, what tests survive.
+Once the user picks a candidate, run the `grilling` skill to walk the decision tree with them — constraints, dependencies, the shape of the deepened module, what sits behind the seam, what tests survive.
 
 Side effects happen inline as decisions crystallize — run the `domain-modeling` skill to keep the domain model current as you go:
 

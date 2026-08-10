@@ -4,7 +4,7 @@ description: Turn the current conversation into a spec and publish it to the pro
 disable-model-invocation: true
 ---
 
-This skill takes the current conversation context and codebase understanding and produces a spec (you may know this document as a PRD). Do NOT interview the user — just synthesize what you already know.
+This skill takes the current conversation context and codebase understanding and produces a spec. Do NOT interview the user — just synthesize what you already know.
 
 The issue tracker and triage label vocabulary should have been provided to you — run `setup-skills` if not.
 
@@ -30,7 +30,7 @@ The solution to the problem, from the user's perspective.
 
 ## User Stories
 
-A focused, numbered list of user stories. Each story should describe a distinct actor, capability, and benefit rather than repeating minor variations. Use this format:
+A LONG, numbered list of user stories. Each user story should be in the format of:
 
 1. As an <actor>, I want a <feature>, so that <benefit>
 
@@ -38,11 +38,7 @@ A focused, numbered list of user stories. Each story should describe a distinct 
 1. As a mobile bank customer, I want to see balance on my accounts, so that I can make better informed decisions about my spending
 </user-story-example>
 
-Cover the important user-visible behaviors without duplicating requirements that are better expressed as acceptance criteria.
-
-## Acceptance Criteria
-
-A numbered list of observable, testable conditions that must be true for the spec to be complete. Cover relevant success paths, failure paths, permissions, boundaries, and edge cases. Trace each criterion to a user story when practical.
+This list of user stories should be extremely extensive and cover all aspects of the feature.
 
 ## Implementation Decisions
 

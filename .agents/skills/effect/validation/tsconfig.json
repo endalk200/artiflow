@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "exactOptionalPropertyTypes": true,
+    "lib": ["ESNext", "DOM"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ESNext",
+    "types": ["react"]
+  },
+  "include": ["./smoke.ts"]
+}

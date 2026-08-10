@@ -1,2 +1,5 @@
+interface:
+  display_name: "Babysit PR"
+  short_description: "Triage and address PR review findings"
 policy:
   allow_implicit_invocation: false

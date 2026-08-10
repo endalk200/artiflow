@@ -1,2 +1,5 @@
+interface:
+  display_name: "Setup Skills"
+  short_description: "Configure a repo for the skill collection"
 policy:
   allow_implicit_invocation: false

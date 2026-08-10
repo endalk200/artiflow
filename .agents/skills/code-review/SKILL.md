@@ -57,7 +57,7 @@ Each smell reads *what it is* followed by *how to fix it*; match it against the 
 
 ### 4. Spawn both subagents in parallel
 
-Send a single message with two `task` tool calls in parallel. Use the `general` subagent type for both.
+Spawn two isolated subagents concurrently using the host's subagent mechanism.
 
 **Standards subagent prompt** - include:
 
