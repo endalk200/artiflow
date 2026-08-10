@@ -75,7 +75,7 @@ jobs:
         run: bun run build
 
       - name: Install browser
-        run: bunx playwright install --with-deps chromium
+        run: bun --filter web playwright:install:ci
 
       - name: End-to-end test
         run: bun run test:e2e
