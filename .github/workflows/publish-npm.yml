@@ -193,9 +193,11 @@ jobs:
             --file "${ARTIFACT_DIRECTORY}/npm-11.18.0.tgz" \
             --directory "${audit_directory}"
 
-          cd "${audit_directory}/package"
-          npm shrinkwrap --ignore-scripts
-          npm audit --omit=dev --audit-level=moderate
+          (
+            cd "${audit_directory}/package"
+            npm shrinkwrap --ignore-scripts
+          )
+          bun run scripts/audit-pinned-npm.ts "${audit_directory}/package"
 
       - name: Record npm CLI checksum
         if: steps.registry.outputs.release_needed == 'true'
