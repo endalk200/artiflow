@@ -126,10 +126,6 @@ describe("ProjectService", () => {
 				(yield* projects.get(ownerA, project.id)).name,
 				"Private project",
 			);
-			assert.strictEqual(
-				(yield* projects.getPublic(project.id)).id,
-				project.id,
-			);
 		}).pipe(run),
 	);
 });

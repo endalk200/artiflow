@@ -1,6 +1,6 @@
 # Artiflow
 
-Artiflow turns agent-produced documents into visual, shareable experiences
+Artiflow turns agent-produced documents into private visual experiences
 organized by the work they belong to.
 
 ## Install the agent Skill
@@ -38,5 +38,5 @@ UPDATE projects SET owner_user_id = '<better-auth-user-id>'
 WHERE owner_user_id IS NULL;
 ```
 
-Project management pages and all CLI API routes require authentication.
-Published Artifact pages remain public so their share URLs continue to work.
+Every Project and Artifact page, management action, and CLI API route requires
+authentication. Artifact reads are owner-scoped just like Project reads.

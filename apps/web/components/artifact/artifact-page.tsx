@@ -1,26 +1,28 @@
 import { compileMDX } from "@fumadocs/mdx-remote";
 import { Effect } from "effect";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
 import { ArtifactService } from "../../server/artiflow/artifact-service";
 import { ProjectService } from "../../server/artiflow/project-service";
+import { getServerSession } from "../../server/auth/session";
 import { runArtiflow } from "../../server/runtime";
 import { ArtifactShell } from "./artifact-shell";
 import { visualComponents } from "./visual-components";
 
 const loadArtifactPage = cache(
-	async (artifactId: string, revisionNumber?: number) =>
+	async (ownerUserId: string, artifactId: string, revisionNumber?: number) =>
 		runArtiflow(
 			Effect.gen(function* () {
 				const artifacts = yield* ArtifactService;
 				const projects = yield* ProjectService;
-				const artifact = yield* artifacts.getPublic(artifactId);
+				const artifact = yield* artifacts.get(ownerUserId, artifactId);
 				return {
 					artifact,
-					project: yield* projects.getPublic(artifact.projectId),
-					revision: yield* artifacts.getPublicRevision(
+					project: yield* projects.get(ownerUserId, artifact.projectId),
+					revision: yield* artifacts.getRevision(
+						ownerUserId,
 						artifactId,
 						revisionNumber,
 					),
@@ -36,11 +38,33 @@ const loadArtifactPage = cache(
 		),
 );
 
+const artifactPath = (artifactId: string, revisionNumber?: number) =>
+	revisionNumber === undefined
+		? `/artifacts/${artifactId}`
+		: `/artifacts/${artifactId}/revisions/${revisionNumber}`;
+
+const requireArtifactSession = async (
+	artifactId: string,
+	revisionNumber?: number,
+) => {
+	const session = await getServerSession();
+	if (session === null) {
+		const callbackURL = artifactPath(artifactId, revisionNumber);
+		redirect(`/sign-in?callbackURL=${encodeURIComponent(callbackURL)}`);
+	}
+	return session;
+};
+
 export async function generateArtifactMetadata(
 	artifactId: string,
 	revisionNumber?: number,
 ): Promise<Metadata> {
-	const result = await loadArtifactPage(artifactId, revisionNumber);
+	const session = await requireArtifactSession(artifactId, revisionNumber);
+	const result = await loadArtifactPage(
+		session.user.id,
+		artifactId,
+		revisionNumber,
+	);
 
 	if (result === null) notFound();
 
@@ -54,7 +78,12 @@ export async function ArtifactPage({
 	readonly artifactId: string;
 	readonly revisionNumber?: number;
 }) {
-	const result = await loadArtifactPage(artifactId, revisionNumber);
+	const session = await requireArtifactSession(artifactId, revisionNumber);
+	const result = await loadArtifactPage(
+		session.user.id,
+		artifactId,
+		revisionNumber,
+	);
 
 	if (result === null) notFound();
 

@@ -169,10 +169,6 @@ describe("PostgreSQL Artiflow repository", () => {
 					artifacts.get(ownerB, first.artifactId),
 				);
 				assert.strictEqual(hiddenArtifact._tag, "ArtifactNotFound");
-				assert.strictEqual(
-					(yield* artifacts.getPublic(first.artifactId)).id,
-					first.artifactId,
-				);
 
 				yield* projects.delete(ownerA, project.id);
 				const deleted = yield* Effect.flip(

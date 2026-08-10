@@ -45,9 +45,6 @@ export type ProjectServiceShape = {
 		ownerUserId: string,
 		projectId: string,
 	) => Effect.Effect<Project, InfrastructureError | ProjectNotFound>;
-	readonly getPublic: (
-		projectId: string,
-	) => Effect.Effect<Project, InfrastructureError | ProjectNotFound>;
 	readonly list: (
 		ownerUserId: string,
 	) => Effect.Effect<ReadonlyArray<ProjectListItem>, InfrastructureError>;
@@ -125,18 +122,6 @@ export class ProjectService extends Context.Service<
 							}),
 						),
 						Effect.withSpan("artiflow.project.get", {
-							attributes: { "artiflow.project.id": projectId },
-						}),
-					),
-				getPublic: (projectId) =>
-					repository.getPublicProject(projectId).pipe(
-						Effect.flatMap(
-							Option.match({
-								onNone: () => Effect.fail(new ProjectNotFound({ projectId })),
-								onSome: Effect.succeed,
-							}),
-						),
-						Effect.withSpan("artiflow.project.get_public", {
 							attributes: { "artiflow.project.id": projectId },
 						}),
 					),
