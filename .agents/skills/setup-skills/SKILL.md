@@ -9,7 +9,7 @@ disable-model-invocation: true
 Scaffold the per-repo configuration that the engineering skills assume:
 
 - **Issue tracker** — where issues live (GitHub by default; local markdown is also supported out of the box)
-- **Triage and Wayfinder labels** — the strings used for triage states and Wayfinder artifacts
+- **Triage and Wayfinder labels** — the strings used by whichever of those skills are installed
 - **Domain docs** — where `CONTEXT.md` and ADRs live, and the consumer rules for reading them
 
 This is a prompt-driven skill, not a deterministic script. Explore, present what you found, confirm with the user, then write.
@@ -26,12 +26,12 @@ Look at the current repo to understand its starting state. Read whatever exists;
 - `docs/adr/` and any `src/*/docs/adr/` directories
 - `docs/agents/` — does this skill's prior output already exist?
 - `.scratch/` — sign that a local-markdown issue tracker convention is already in use
+- Whether `triage` and `wayfinder` are installed, either as sibling skill folders or in the available skill catalog
+- Monorepo signals such as `pnpm-workspace.yaml`, a `workspaces` field in `package.json`, or multiple populated packages with their own source roots
 
 ### 2. Present findings and ask
 
-Summarise what's present and what's missing. Then walk the user through the three decisions **one at a time** — present a section, get the user's answer, then move to the next. Don't dump all three at once.
-
-Assume the user does not know what these terms mean. Each section starts with a short explainer (what it is, why these skills need it, what changes if they pick differently). Then show the choices and the default.
+Summarise what's present and what's missing. Then take the applicable sections in order, one answer at a time. Lead each section with the recommended answer so the user can accept it in a word. Give a short explainer only when the choice genuinely branches, and skip a section when exploration or existing configuration already settled it.
 
 **Section A — Issue tracker.**
 
@@ -44,25 +44,25 @@ Default posture: these skills were designed for GitHub. If a `git remote` points
 - **Local markdown** — issues live as files under `.scratch/<feature>/` in this repo (good for solo projects or repos without a remote)
 - **Other** (Jira, Linear, etc.) — ask the user to describe the workflow in one paragraph; the skill will record it as freeform prose
 
-If — and only if — the user picked **GitHub** or **GitLab**, ask one follow-up:
-
-> Explainer: Open-source repos often receive feature requests as pull requests, not just issues — a PR is an issue with attached code. If you turn this on, `triage` pulls *external* PRs into the same queue and runs them through the same labels and states as issues (collaborators' in-flight PRs are left alone). Leave it off if PRs aren't a request surface for you.
-
-- **PRs as a request surface** — yes / no (default: no). Record the answer in `docs/agents/issue-tracker.md`. For local-markdown and other trackers, skip this question — there are no PRs.
+When `triage` is installed and the user picked **GitHub** or **GitLab**, record **PRs as a request surface: no** without asking. The tracker template explains the option so a repository that treats external PRs as requests can enable it later. For local-markdown and other trackers, omit the setting.
 
 **Section B — Triage and Wayfinder label vocabulary.**
 
-> Explainer: When the `triage` skill processes an incoming issue, it moves it through a state machine — needs evaluation, waiting on reporter, ready for an AFK agent to pick up, ready for a human, or won't fix. Wayfinder uses labels to distinguish maps and ticket types. These roles must map to strings that actually exist in the selected tracker so the skills do not create duplicates or apply unknown labels.
+Run this section when `triage` or `wayfinder` is installed. Skip it when neither is installed.
 
-The five canonical triage roles:
+> Explainer: Triage uses labels for categories and workflow states. Wayfinder uses labels to distinguish maps and decision-ticket types. Configure only the roles used by the installed skills so they map to strings that exist in the selected tracker.
 
+If `triage` is installed, configure both category roles and state roles:
+
+- `bug` — something is broken
+- `enhancement` — new feature or improvement
 - `needs-triage` — maintainer needs to evaluate
 - `needs-info` — waiting on reporter
-- `ready-for-agent` — fully specified, AFK-ready (an agent can pick it up with no human context)
+- `ready-for-agent` — fully specified, AFK-ready
 - `ready-for-human` — needs human implementation
 - `wontfix` — will not be actioned
 
-Wayfinder uses five additional canonical label roles to identify maps and ticket types:
+If `wayfinder` is installed, configure its artifact roles:
 
 - `wayfinder:map` — the shared map for one effort
 - `wayfinder:research` — an AFK research ticket
@@ -70,25 +70,23 @@ Wayfinder uses five additional canonical label roles to identify maps and ticket
 - `wayfinder:grilling` — a decision-making conversation
 - `wayfinder:task` — prerequisite work that unblocks a decision
 
-Default: each role's string equals its name. Ask the user if they want to override any. If their issue tracker has no existing labels, the defaults are fine.
+Default: each applicable role's string equals its name. Ask one question: **"Keep the recommended label mappings?"** On yes, use the defaults or the compatible existing labels exploration found. Only if the user says no, collect the overrides. If their issue tracker has no existing labels, recommend the defaults.
 
-For GitHub or GitLab, compare the final mapping with the labels that already exist. Show the user any missing labels and ask whether to create them. If they approve, create the labels with the configured tracker CLI and verify them. If they decline, record the mapping but warn that `triage` and `wayfinder` cannot apply those labels until they exist.
+For GitHub or GitLab, compare the final mapping with the labels that already exist. Show the user any missing labels and ask whether to create them. If they approve, create and verify the labels with the configured tracker CLI. If they decline, record the mapping and identify which installed skill cannot apply each missing role.
 
 **Section C — Domain docs.**
 
 > Explainer: Some skills (`improve-codebase-architecture`, `domain-modeling`, and `tdd`) read a `CONTEXT.md` file to learn the project's domain language, and `docs/adr/` for past architectural decisions. They need to know whether the repo has one global context or multiple (e.g. a monorepo with separate frontend/backend contexts) so they look in the right place.
 
-Confirm the layout:
-
-- **Single-context** — one `CONTEXT.md` + `docs/adr/` at the repo root. Most repos are this.
-- **Multi-context** — `CONTEXT-MAP.md` at the root pointing to per-context `CONTEXT.md` files (typically a monorepo).
+Default to **single-context** — one `CONTEXT.md` plus `docs/adr/` at the repository root. Write that choice without asking unless exploration found genuine monorepo signals. When it did, offer **multi-context** — a root `CONTEXT-MAP.md` pointing to per-context `CONTEXT.md` files — and confirm the layout.
 
 ### 3. Confirm and edit
 
 Show the user a draft of:
 
 - The `## Agent skills` block to add to whichever of `CLAUDE.md` / `AGENTS.md` is being edited (see step 4 for selection rules)
-- The contents of `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md`, `docs/agents/domain.md`
+- The contents of `docs/agents/issue-tracker.md` and `docs/agents/domain.md`
+- The contents of `docs/agents/triage-labels.md` when Section B ran
 
 Let them edit before writing.
 
@@ -113,7 +111,7 @@ The block:
 
 [one-line summary of where issues are tracked]. See `docs/agents/issue-tracker.md`.
 
-### Triage and Wayfinder labels
+### Skill labels
 
 [one-line summary of the label vocabulary]. See `docs/agents/triage-labels.md`.
 
@@ -122,12 +120,14 @@ The block:
 [one-line summary of layout — "single-context" or "multi-context"]. See `docs/agents/domain.md`.
 ```
 
-Then write the three docs files using the seed templates in this skill folder as a starting point:
+Include the labels subsection only when Section B ran.
+
+Then write the docs files using the seed templates in this skill folder as a starting point:
 
 - [issue-tracker-github.md](./issue-tracker-github.md) — GitHub issue tracker
 - [issue-tracker-gitlab.md](./issue-tracker-gitlab.md) — GitLab issue tracker
 - [issue-tracker-local.md](./issue-tracker-local.md) — local-markdown issue tracker
-- [triage-labels.md](./triage-labels.md) — label mapping
+- [triage-labels.md](./triage-labels.md) — label mapping, only when Section B ran
 - [domain.md](./domain.md) — domain doc consumer rules + layout
 
 For "other" issue trackers, write `docs/agents/issue-tracker.md` from scratch using the user's description.

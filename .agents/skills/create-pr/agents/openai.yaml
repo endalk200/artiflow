@@ -1,0 +1,5 @@
+interface:
+  display_name: "Create PR"
+  short_description: "Publish a branch for review"
+policy:
+  allow_implicit_invocation: false

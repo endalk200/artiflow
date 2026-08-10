@@ -1,0 +1,20 @@
+{
+  "name": "@local/effect-skill-validation",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.12.3",
+  "scripts": {
+    "check": "node ./forbidden.mjs && tsc -p ./tsconfig.json"
+  },
+  "devDependencies": {
+    "@effect/atom-react": "4.0.0-beta.102",
+    "@effect/vitest": "4.0.0-beta.102",
+    "@types/react": "19.2.17",
+    "@types/scheduler": "0.26.0",
+    "effect": "4.0.0-beta.102",
+    "react": "19.2.7",
+    "scheduler": "0.27.0",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}
