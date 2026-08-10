@@ -58,14 +58,41 @@
 		},
 		"test:e2e": {
 			"dependsOn": ["^build"],
+			"env": [
+				"ARTIFLOW_PUBLIC_BASE_URL",
+				"BETTER_AUTH_SECRET",
+				"BETTER_AUTH_URL",
+				"DATABASE_URL",
+				"GITHUB_CLIENT_ID",
+				"GITHUB_CLIENT_SECRET",
+				"NEXT_PUBLIC_APP_URL"
+			],
 			"cache": false
 		},
 		"test:e2e:headed": {
 			"dependsOn": ["^build"],
+			"env": [
+				"ARTIFLOW_PUBLIC_BASE_URL",
+				"BETTER_AUTH_SECRET",
+				"BETTER_AUTH_URL",
+				"DATABASE_URL",
+				"GITHUB_CLIENT_ID",
+				"GITHUB_CLIENT_SECRET",
+				"NEXT_PUBLIC_APP_URL"
+			],
 			"cache": false
 		},
 		"test:e2e:ui": {
 			"dependsOn": ["^build"],
+			"env": [
+				"ARTIFLOW_PUBLIC_BASE_URL",
+				"BETTER_AUTH_SECRET",
+				"BETTER_AUTH_URL",
+				"DATABASE_URL",
+				"GITHUB_CLIENT_ID",
+				"GITHUB_CLIENT_SECRET",
+				"NEXT_PUBLIC_APP_URL"
+			],
 			"cache": false
 		},
 		"dev": {
