@@ -1,99 +1,118 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
-import { PINNED_NPM_AUDIT_EXPIRES_AT, PINNED_NPM_VERSION, validatePinnedNpmAudit } from "./pinned-npm-audit.js";
+import {
+	PINNED_NPM_PATCHES,
+	PINNED_NPM_VERSION,
+	validatePinnedNpmAudit,
+	validatePinnedNpmPatch,
+} from "./pinned-npm-audit.js";
 
-const knownAuditReport = {
-	vulnerabilities: {
-		"brace-expansion": {
-			nodes: ["node_modules/brace-expansion"],
-			severity: "high",
-			via: [
-				{ url: "https://github.com/advisories/GHSA-mh99-v99m-4gvg" },
-				{ url: "https://github.com/advisories/GHSA-rgw5-rvv9-x895" },
-			],
-		},
-		"ip-address": {
-			nodes: ["node_modules/ip-address"],
-			severity: "high",
-			via: [
-				{ url: "https://github.com/advisories/GHSA-mwp4-54f8-5fhr" },
-				{ url: "https://github.com/advisories/GHSA-4xrf-jv44-h6hh" },
-				{ url: "https://github.com/advisories/GHSA-22jq-vg5j-6vgg" },
-			],
-		},
-		tar: {
-			nodes: ["node_modules/tar"],
-			severity: "moderate",
-			via: [{ url: "https://github.com/advisories/GHSA-r292-9mhp-454m" }],
-		},
-		undici: {
-			nodes: ["node_modules/undici"],
-			severity: "moderate",
-			via: [
-				{ url: "https://github.com/advisories/GHSA-8xcm-r25x-g524" },
-				{ url: "https://github.com/advisories/GHSA-m8rv-5g2x-5cg5" },
-				{ url: "https://github.com/advisories/GHSA-v3r7-h72x-cjcm" },
-			],
-		},
-	},
+const cleanAuditReport = {
+	vulnerabilities: {},
 };
 
-const knownVersions = {
-	"node_modules/brace-expansion": "5.0.7",
-	"node_modules/ip-address": "10.2.0",
-	"node_modules/tar": "7.5.19",
-	"node_modules/undici": "6.27.0",
+const patch = PINNED_NPM_PATCHES[0];
+if (patch === undefined) throw new Error("Expected a pinned npm patch fixture.");
+
+const sourceManifest = {
+	dependencies: { "balanced-match": "^4.0.2" },
+	name: patch.packageName,
+	version: patch.sourceVersion,
+};
+const replacementManifest = {
+	dependencies: { "balanced-match": "^4.0.2" },
+	name: patch.packageName,
+	version: patch.targetVersion,
 };
 
-const validate = (
-	report: unknown = knownAuditReport,
-	versionsByNode: Readonly<Record<string, string>> = knownVersions,
-	now = new Date("2026-08-10T00:00:00.000Z"),
-	actualNpmVersion: string = PINNED_NPM_VERSION,
-) =>
-	validatePinnedNpmAudit({
-		actualNpmVersion,
-		now,
-		report,
-		versionsByNode,
+describe("pinned npm CLI policy", () => {
+	it("keeps the workflow pin aligned with the audited version", () => {
+		const workflowsDirectory = join(import.meta.dirname, "..", "..", "..", "..", ".github", "workflows");
+
+		for (const workflowName of ["publish-npm.yml", "verify-pinned-npm.yml"]) {
+			const workflow = readFileSync(join(workflowsDirectory, workflowName), "utf8");
+			expect(workflow).toContain(`PINNED_NPM_VERSION: "${PINNED_NPM_VERSION}"`);
+		}
 	});
 
-describe("pinned npm CLI audit policy", () => {
-	it("accepts only the known findings for their exact bundled versions", () => {
-		expect(validate()).toHaveLength(9);
-	});
-
-	it("rejects a newly reported advisory", () => {
-		const report = structuredClone(knownAuditReport);
-		report.vulnerabilities.undici.via.push({
-			url: "https://github.com/advisories/GHSA-new0-new0-new0",
-		});
-
-		expect(() => validate(report)).toThrow(/Unexpected npm CLI audit finding.*GHSA-new0-new0-new0/s);
-	});
-
-	it("rejects an allowed advisory when the installed version changes", () => {
-		expect(() =>
-			validate(knownAuditReport, {
-				...knownVersions,
-				"node_modules/tar": "7.5.20",
+	it("accepts a clean audit report", () => {
+		expect(
+			validatePinnedNpmAudit({
+				actualNpmVersion: PINNED_NPM_VERSION,
+				report: cleanAuditReport,
 			}),
-		).toThrow(/Unexpected npm CLI audit finding.*tar@7\.5\.20/s);
+		).toBeUndefined();
 	});
 
-	it("expires the temporary exceptions", () => {
-		expect(() => validate(knownAuditReport, knownVersions, new Date(PINNED_NPM_AUDIT_EXPIRES_AT))).toThrow(
-			/Temporary npm CLI audit exceptions expired/,
-		);
-	});
-
-	it("allows a clean report after the exception expiry", () => {
-		expect(validate({ vulnerabilities: {} }, {}, new Date("2027-01-01T00:00:00.000Z"))).toEqual([]);
+	it("rejects every moderate-or-higher finding", () => {
+		expect(() =>
+			validatePinnedNpmAudit({
+				actualNpmVersion: PINNED_NPM_VERSION,
+				report: {
+					vulnerabilities: {
+						undici: { severity: "moderate" },
+					},
+				},
+			}),
+		).toThrow(/Pinned npm CLI audit finding.*undici \(moderate\)/s);
 	});
 
 	it("rejects a different npm CLI version", () => {
-		expect(() => validate(knownAuditReport, knownVersions, undefined, "11.19.0")).toThrow(
-			/npm CLI version 11\.19\.0 does not match audited version 11\.18\.0/,
-		);
+		expect(() =>
+			validatePinnedNpmAudit({
+				actualNpmVersion: "11.20.0",
+				report: cleanAuditReport,
+			}),
+		).toThrow(/npm CLI version 11\.20\.0 does not match audited version 11\.19\.0/);
+	});
+
+	it("accepts an integrity-pinned patch with an unchanged dependency contract", () => {
+		expect(
+			validatePinnedNpmPatch({
+				actualIntegrity: patch.integrity,
+				patch,
+				replacementManifest,
+				sourceManifest,
+			}),
+		).toBeUndefined();
+	});
+
+	it("rejects source-version drift", () => {
+		expect(() =>
+			validatePinnedNpmPatch({
+				actualIntegrity: patch.integrity,
+				patch,
+				replacementManifest,
+				sourceManifest: { ...sourceManifest, version: "5.0.8" },
+			}),
+		).toThrow(/expected brace-expansion@5\.0\.7/);
+	});
+
+	it("rejects replacement-integrity drift", () => {
+		expect(() =>
+			validatePinnedNpmPatch({
+				actualIntegrity: "sha512-unexpected",
+				patch,
+				replacementManifest,
+				sourceManifest,
+			}),
+		).toThrow(/integrity.*does not match policy/);
+	});
+
+	it("rejects a changed replacement dependency contract", () => {
+		expect(() =>
+			validatePinnedNpmPatch({
+				actualIntegrity: patch.integrity,
+				patch,
+				replacementManifest: {
+					...replacementManifest,
+					dependencies: { "balanced-match": "^5.0.0" },
+				},
+				sourceManifest,
+			}),
+		).toThrow(/dependency contract changed/);
 	});
 });
