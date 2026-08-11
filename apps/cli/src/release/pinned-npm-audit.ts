@@ -1,62 +1,49 @@
-export const PINNED_NPM_VERSION = "11.18.0" as const;
-export const PINNED_NPM_AUDIT_EXPIRES_AT = "2026-08-24T00:00:00.000Z" as const;
+export const PINNED_NPM_VERSION = "11.19.0" as const;
 
-type AuditException = {
-	readonly advisoryId: string;
+export type PinnedNpmPatch = {
+	readonly integrity: string;
 	readonly packageName: string;
-	readonly version: string;
+	readonly sourceVersion: string;
+	readonly targetVersion: string;
 };
 
-// npm 11.18.0 bundles these versions, and no released Node 22-compatible npm
-// CLI contains all upstream fixes yet. This policy is limited to the official
-// pinned CLI used to stage a checksummed Artiflow tarball and expires below.
-const auditExceptions: ReadonlyArray<AuditException> = [
+// npm 11.19.0 predates these upstream security patches. The release workflow
+// replaces only these package directories in the official npm tarball, audits
+// the resulting tree, checksums it, and uses that same artifact for staging.
+export const PINNED_NPM_PATCHES: ReadonlyArray<PinnedNpmPatch> = [
 	{
-		advisoryId: "GHSA-mh99-v99m-4gvg",
+		integrity: "sha512-ScQ4IuvIEF1TMlP7Zt+vjJ//9zlPb2SDcxWxM3bk8s6t6GGdJ7KO1dCcTidOPJKePW30LE/2cT7wCyPho9/Wxg==",
 		packageName: "brace-expansion",
-		version: "5.0.7",
+		sourceVersion: "5.0.7",
+		targetVersion: "5.0.9",
 	},
 	{
-		advisoryId: "GHSA-rgw5-rvv9-x895",
-		packageName: "brace-expansion",
-		version: "5.0.7",
-	},
-	{
-		advisoryId: "GHSA-mwp4-54f8-5fhr",
+		integrity: "sha512-1e9d3kb97NHJTIJDZW9rKqW2h6+dFa50Dy0fpPSMQp2ADje5gvKsXmdiK6dwY5t76TaTt5+P5N1Y/LoToIxP6g==",
 		packageName: "ip-address",
-		version: "10.2.0",
+		sourceVersion: "10.2.0",
+		targetVersion: "10.3.1",
 	},
 	{
-		advisoryId: "GHSA-4xrf-jv44-h6hh",
-		packageName: "ip-address",
-		version: "10.2.0",
-	},
-	{
-		advisoryId: "GHSA-22jq-vg5j-6vgg",
-		packageName: "ip-address",
-		version: "10.2.0",
-	},
-	{
-		advisoryId: "GHSA-r292-9mhp-454m",
+		integrity: "sha512-XdhtCvlMywwxpCW8YEq3lOXBJpUPTR2OHHcwLPO3HwsJqOHa2Ok/oJ7ruGzp+JrKoRPVCzJwAdEjqLW/vNRPHA==",
 		packageName: "tar",
-		version: "7.5.19",
+		sourceVersion: "7.5.19",
+		targetVersion: "7.5.21",
 	},
 	{
-		advisoryId: "GHSA-8xcm-r25x-g524",
+		integrity: "sha512-LIY910g9TI13YS95lrMFrs8Rm/u/irgHeTWoKCoteeJ04CUJ92eEfj0rVn+7VKMPBpUPiUoBKfhNyLI23EE/KA==",
 		packageName: "undici",
-		version: "6.27.0",
-	},
-	{
-		advisoryId: "GHSA-m8rv-5g2x-5cg5",
-		packageName: "undici",
-		version: "6.27.0",
-	},
-	{
-		advisoryId: "GHSA-v3r7-h72x-cjcm",
-		packageName: "undici",
-		version: "6.27.0",
+		sourceVersion: "6.27.0",
+		targetVersion: "6.28.0",
 	},
 ];
+
+type PackageManifest = {
+	readonly dependencies?: Readonly<Record<string, string>>;
+	readonly name: string;
+	readonly optionalDependencies?: Readonly<Record<string, string>>;
+	readonly peerDependencies?: Readonly<Record<string, string>>;
+	readonly version: string;
+};
 
 const severityRank = {
 	critical: 4,
@@ -68,33 +55,49 @@ const severityRank = {
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
 
-const exceptionKey = ({ advisoryId, packageName, version }: AuditException) =>
-	`${packageName}@${version}:${advisoryId}`;
+const dependencyContract = ({ dependencies, optionalDependencies, peerDependencies }: PackageManifest) =>
+	JSON.stringify({
+		dependencies: dependencies ?? {},
+		optionalDependencies: optionalDependencies ?? {},
+		peerDependencies: peerDependencies ?? {},
+	});
 
-const exceptionKeys = new Set(auditExceptions.map(exceptionKey));
-
-const advisoryIdFrom = (value: unknown): string | undefined => {
-	if (!isRecord(value) || typeof value.url !== "string") return undefined;
-
-	try {
-		const advisoryId = new URL(value.url).pathname.split("/").at(-1);
-		return advisoryId?.match(/^GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}$/i)?.[0];
-	} catch {
-		return undefined;
+export const validatePinnedNpmPatch = ({
+	actualIntegrity,
+	patch,
+	replacementManifest,
+	sourceManifest,
+}: {
+	readonly actualIntegrity: string;
+	readonly patch: PinnedNpmPatch;
+	readonly replacementManifest: PackageManifest;
+	readonly sourceManifest: PackageManifest;
+}): void => {
+	if (sourceManifest.name !== patch.packageName || sourceManifest.version !== patch.sourceVersion) {
+		throw new Error(
+			`Pinned npm contains ${sourceManifest.name}@${sourceManifest.version}; expected ${patch.packageName}@${patch.sourceVersion}.`,
+		);
+	}
+	if (replacementManifest.name !== patch.packageName || replacementManifest.version !== patch.targetVersion) {
+		throw new Error(
+			`Replacement contains ${replacementManifest.name}@${replacementManifest.version}; expected ${patch.packageName}@${patch.targetVersion}.`,
+		);
+	}
+	if (actualIntegrity !== patch.integrity) {
+		throw new Error(`Replacement integrity for ${patch.packageName}@${patch.targetVersion} does not match policy.`);
+	}
+	if (dependencyContract(sourceManifest) !== dependencyContract(replacementManifest)) {
+		throw new Error(`Replacement dependency contract changed for ${patch.packageName}@${patch.targetVersion}.`);
 	}
 };
 
 export const validatePinnedNpmAudit = ({
 	actualNpmVersion,
-	now,
 	report,
-	versionsByNode,
 }: {
 	readonly actualNpmVersion: string;
-	readonly now: Date;
 	readonly report: unknown;
-	readonly versionsByNode: Readonly<Record<string, string>>;
-}): ReadonlyArray<string> => {
+}): void => {
 	if (actualNpmVersion !== PINNED_NPM_VERSION) {
 		throw new Error(`npm CLI version ${actualNpmVersion} does not match audited version ${PINNED_NPM_VERSION}.`);
 	}
@@ -103,8 +106,7 @@ export const validatePinnedNpmAudit = ({
 		throw new Error("npm audit returned a malformed vulnerabilities report.");
 	}
 
-	const accepted: Array<string> = [];
-	const unexpected: Array<string> = [];
+	const findings: Array<string> = [];
 
 	for (const [packageName, value] of Object.entries(report.vulnerabilities)) {
 		if (!isRecord(value) || typeof value.severity !== "string") {
@@ -115,46 +117,10 @@ export const validatePinnedNpmAudit = ({
 		if (rank === undefined) {
 			throw new Error(`npm audit returned an unknown severity for ${packageName}: ${value.severity}.`);
 		}
-		if (rank < severityRank.moderate) continue;
-
-		if (!Array.isArray(value.nodes) || value.nodes.length === 0) {
-			throw new Error(`npm audit did not identify an installed node for ${packageName}.`);
-		}
-		if (!Array.isArray(value.via) || value.via.length === 0) {
-			throw new Error(`npm audit did not identify an advisory for ${packageName}.`);
-		}
-
-		const advisoryIds = value.via.map(advisoryIdFrom);
-		if (advisoryIds.some((advisoryId) => advisoryId === undefined)) {
-			throw new Error(`npm audit returned an indirect or malformed advisory for ${packageName}.`);
-		}
-
-		for (const node of value.nodes) {
-			if (typeof node !== "string") {
-				throw new Error(`npm audit returned a malformed installed node for ${packageName}.`);
-			}
-
-			const version = versionsByNode[node];
-			if (version === undefined) {
-				throw new Error(`Could not resolve the installed version for ${packageName} at ${node}.`);
-			}
-
-			for (const advisoryId of advisoryIds as ReadonlyArray<string>) {
-				const finding = { advisoryId, packageName, version };
-				const summary = `${advisoryId} ${packageName}@${version} (${node})`;
-				if (exceptionKeys.has(exceptionKey(finding))) accepted.push(summary);
-				else unexpected.push(summary);
-			}
-		}
+		if (rank >= severityRank.moderate) findings.push(`${packageName} (${value.severity})`);
 	}
 
-	if (unexpected.length > 0) {
-		throw new Error(`Unexpected npm CLI audit finding(s):\n${unexpected.sort().join("\n")}`);
+	if (findings.length > 0) {
+		throw new Error(`Pinned npm CLI audit finding(s):\n${findings.sort().join("\n")}`);
 	}
-
-	if (accepted.length > 0 && now.getTime() >= Date.parse(PINNED_NPM_AUDIT_EXPIRES_AT)) {
-		throw new Error(`Temporary npm CLI audit exceptions expired at ${PINNED_NPM_AUDIT_EXPIRES_AT}.`);
-	}
-
-	return accepted.sort();
 };

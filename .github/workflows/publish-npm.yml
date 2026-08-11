@@ -7,6 +7,9 @@ on:
       - apps/cli/package.json
   workflow_dispatch:
 
+env:
+  PINNED_NPM_VERSION: "11.19.0"
+
 permissions:
   contents: read
 
@@ -41,7 +44,7 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - name: Set up npm
-        run: npm install -g npm@11.18.0
+        run: npm install -g "npm@${PINNED_NPM_VERSION}"
 
       - name: Read package version
         id: package
@@ -176,33 +179,11 @@ jobs:
         working-directory: ${{ runner.temp }}/artiflow-npm-release
         run: sha256sum "artiflow-${PKG_VERSION}.tgz" > "artiflow-${PKG_VERSION}.tgz.sha256"
 
-      - name: Pack the pinned npm CLI
+      - name: Prepare the pinned npm CLI
         if: steps.registry.outputs.release_needed == 'true'
         env:
           ARTIFACT_DIRECTORY: ${{ runner.temp }}/artiflow-npm-release
-        run: npm pack npm@11.18.0 --pack-destination "${ARTIFACT_DIRECTORY}" --silent
-
-      - name: Audit the pinned npm CLI
-        if: steps.registry.outputs.release_needed == 'true'
-        env:
-          ARTIFACT_DIRECTORY: ${{ runner.temp }}/artiflow-npm-release
-        run: |
-          audit_directory="${RUNNER_TEMP}/npm-cli-audit"
-          mkdir "${audit_directory}"
-          tar --extract --gzip \
-            --file "${ARTIFACT_DIRECTORY}/npm-11.18.0.tgz" \
-            --directory "${audit_directory}"
-
-          (
-            cd "${audit_directory}/package"
-            npm shrinkwrap --ignore-scripts
-          )
-          bun run scripts/audit-pinned-npm.ts "${audit_directory}/package"
-
-      - name: Record npm CLI checksum
-        if: steps.registry.outputs.release_needed == 'true'
-        working-directory: ${{ runner.temp }}/artiflow-npm-release
-        run: sha256sum "npm-11.18.0.tgz" > "npm-11.18.0.tgz.sha256"
+        run: bun run scripts/prepare-pinned-npm.ts "${ARTIFACT_DIRECTORY}"
 
       - name: Upload verified npm package
         if: steps.registry.outputs.release_needed == 'true'
@@ -214,8 +195,9 @@ jobs:
           path: |
             ${{ runner.temp }}/artiflow-npm-release/artiflow-${{ steps.package.outputs.version }}.tgz
             ${{ runner.temp }}/artiflow-npm-release/artiflow-${{ steps.package.outputs.version }}.tgz.sha256
-            ${{ runner.temp }}/artiflow-npm-release/npm-11.18.0.tgz
-            ${{ runner.temp }}/artiflow-npm-release/npm-11.18.0.tgz.sha256
+            ${{ runner.temp }}/artiflow-npm-release/npm-${{ env.PINNED_NPM_VERSION }}.tgz
+            ${{ runner.temp }}/artiflow-npm-release/npm-${{ env.PINNED_NPM_VERSION }}-hardened.tgz
+            ${{ runner.temp }}/artiflow-npm-release/npm-${{ env.PINNED_NPM_VERSION }}.sha256
 
   stage:
     name: Stage artiflow
@@ -248,12 +230,14 @@ jobs:
           PKG_VERSION: ${{ needs.prepare.outputs.version }}
         run: |
           sha256sum --check "artiflow-${PKG_VERSION}.tgz.sha256"
-          sha256sum --check "npm-11.18.0.tgz.sha256"
+          sha256sum --check "npm-${PINNED_NPM_VERSION}.sha256"
 
       - name: Extract pinned npm CLI
         run: |
           mkdir npm-cli
-          tar --extract --gzip --file release-artifact/npm-11.18.0.tgz --directory npm-cli
+          tar --extract --gzip \
+            --file "release-artifact/npm-${PINNED_NPM_VERSION}-hardened.tgz" \
+            --directory npm-cli
 
       - name: Stage package on npm
         env:
