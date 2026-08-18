@@ -10,12 +10,12 @@
 		"@app/api-contract": "*",
 		"@app/telemetry-config": "*",
 		"@app/typescript-config": "*",
-		"@effect/platform-node": "4.0.0-beta.100",
-		"@effect/vitest": "4.0.0-beta.100",
-		"@types/node": "^22.15.3",
-		"effect": "4.0.0-beta.100",
+		"@effect/platform-node": "4.0.0-rc.109",
+		"@effect/vitest": "4.0.0-rc.109",
+		"@types/node": "^26.2.0",
+		"effect": "4.0.0-rc.109",
 		"toml": "^5.0.0",
-		"typescript": "^6.0.3",
+		"typescript": "^7.0.2",
 		"vitest": "^4.1.10"
 	},
 	"bin": {
