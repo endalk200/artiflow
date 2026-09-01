@@ -16,13 +16,13 @@
 		"test": "vitest run"
 	},
 	"dependencies": {
-		"effect": "4.0.0-beta.100"
+		"effect": "4.0.0-rc.112"
 	},
 	"devDependencies": {
 		"@app/biome-config": "*",
 		"@app/typescript-config": "*",
-		"@effect/vitest": "4.0.0-beta.100",
-		"typescript": "^6.0.3",
-		"vitest": "^4.1.10"
+		"@effect/vitest": "4.0.0-rc.112",
+		"typescript": "^7.0.2",
+		"vitest": "^4.1.11"
 	}
 }
